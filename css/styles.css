@@ -1,5 +1,5 @@
 .slidecontainer {
-    width: 1200px; /* width of the outside container */
+    width: 1000px; /* width of the outside container */
 }
   
 .slider {
@@ -39,6 +39,6 @@
 
 span.swatch {
     display: inline-block;
-    width: 80px;
+    width: 68px;
     height: 40px;
 }
