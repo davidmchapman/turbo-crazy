@@ -16,7 +16,7 @@ let bgValue;
 
 let paths = new Map();
 
-let ballColor = [0, 95, 115, 0.5];
+let ballColor = [247, 37, 133, 1];
 let showPath = true;
 
 let activePath = 1;
