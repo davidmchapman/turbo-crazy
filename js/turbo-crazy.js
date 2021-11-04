@@ -1,4 +1,5 @@
 import { Ball } from './ball.js';
+import { Path } from './path.js';
 import { PathNode } from './path-node.js';
 import { Vector } from './vector.js';
 
@@ -13,11 +14,12 @@ let fps;
 
 let bgValue;
 
-let nodes = [];
-let balls = [];
+let paths = new Map();
 
 let ballColor = [0, 95, 115, 0.5];
 let showPath = true;
+
+let activePath = 1;
 
 document.addEventListener('DOMContentLoaded', (event) => {
 
@@ -54,6 +56,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.getElementById('swatch_3f37c9').addEventListener('click', e => { ballColor = [63, 55, 201, 1] }, false);
     document.getElementById('swatch_4361ee').addEventListener('click', e => { ballColor = [67, 97, 238, 1] }, false);
 
+    // initialize the paths map with 9 paths
+    for (let pathNumber = 1; pathNumber <= 9; pathNumber++) {
+        paths.set(pathNumber, new Path())
+    }
+
     window.requestAnimationFrame(gameLoop);
 });
 
@@ -62,11 +69,48 @@ function checkKey(e) {
 
     switch (e.keyCode) {
         case 32: // spacebar
-            balls.push(new Ball(4, ballColor))
+            let path = paths.get(activePath);
+            path.balls.push(new Ball(4, ballColor))
             break;
 
         case 72: // h key
             showPath = !showPath;
+            break;
+
+        case 49: // 1 key
+            activePath = 1;
+            break;
+
+        case 50: // 2 key
+            activePath = 2;
+            break;
+
+        case 51: // 3 key
+            activePath = 3;
+            break;
+
+        case 52: // 4 key
+            activePath = 4;
+            break;
+
+        case 53: // 5 key
+            activePath = 5;
+            break;
+
+        case 54: // 6 key
+            activePath = 6;
+            break;
+
+        case 55: // 7 key
+            activePath = 7;
+            break;
+
+        case 56: // 8 key
+            activePath = 8;
+            break;
+
+        case 57: // 9 key
+            activePath = 9;
             break;
 
         default:
@@ -101,9 +145,10 @@ function gameLoop(timestamp) {
 
 function addToNodes(x, y) {
 
-    let priorNode = nodes.at(-1);
+    let path = paths.get(activePath);
+    let priorNode = path.nodes.at(-1);
     if (priorNode === undefined) {
-        nodes.push(new PathNode(x, y, true));
+        path.nodes.push(new PathNode(x, y, true));
         return;
     }
 
@@ -118,9 +163,9 @@ function addToNodes(x, y) {
         currentPosition = Vector.multiply(direction, 16).add(currentPosition);
 
         if (Vector.distance(priorNodeVector, currentPosition) < distance) {
-            nodes.push(new PathNode(currentPosition.x, currentPosition.y, false));
+            path.nodes.push(new PathNode(currentPosition.x, currentPosition.y, false));
         } else {
-            nodes.push(new PathNode(x, y, true));
+            path.nodes.push(new PathNode(x, y, true));
             break;
         }
     }
@@ -130,8 +175,7 @@ function draw() {
     
     updateBgColor();
     drawFps();
-    drawNodes();
-    drawBalls();
+    drawPaths();
 }
 
 function updateBgColor() {
@@ -148,7 +192,14 @@ function drawFps() {
     ctx.fillText("FPS: " + fps, 2, 12);
 }
 
-function drawNodes() {
+function drawPaths() {
+    for (const [key, path] of paths) {
+        drawPathNodes(path);
+        drawPathBalls(path);
+    }
+}
+
+function drawPathNodes(path) {
     let nodeColor = Math.abs(bgValue - 255);
     
     if (!showPath) {
@@ -157,7 +208,7 @@ function drawNodes() {
     
     ctx.fillStyle = "rgb(" + nodeColor + ", " + nodeColor + ", " + nodeColor + ")";
 
-    nodes.forEach(n => {
+    path.nodes.forEach(n => {
         let dim = 1;
 
         if (n.isAnchor) {
@@ -168,17 +219,17 @@ function drawNodes() {
     });
 }
 
-function drawBalls() {
-    let maxNodeIndex = nodes.length - 1;
+function drawPathBalls(path) {
+    let maxNodeIndex = path.nodes.length - 1;
 
     if (maxNodeIndex === -1) {
         return;
     }
 
-    balls.forEach(b => {
+    path.balls.forEach(b => {
         let newIndex = b.pathNodeIndex >= maxNodeIndex ? 0 : b.pathNodeIndex + 1;
         b.pathNodeIndex = newIndex;
-        let node = nodes[newIndex];
+        let node = path.nodes[newIndex];
 
         ctx.beginPath();
         ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI);
