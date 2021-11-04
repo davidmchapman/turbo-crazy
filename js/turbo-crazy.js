@@ -193,13 +193,13 @@ function drawFps() {
 }
 
 function drawPaths() {
-    for (const [key, path] of paths) {
-        drawPathNodes(path);
+    for (const [pathNumber, path] of paths) {
+        drawPathNodes(pathNumber, path);
         drawPathBalls(path);
     }
 }
 
-function drawPathNodes(path) {
+function drawPathNodes(pathNumber, path) {
     let nodeColor = Math.abs(bgValue - 255);
     
     if (!showPath) {
@@ -208,14 +208,41 @@ function drawPathNodes(path) {
     
     ctx.fillStyle = "rgb(" + nodeColor + ", " + nodeColor + ", " + nodeColor + ")";
 
-    path.nodes.forEach(n => {
-        let dim = 1;
+    let maxNodeIndex = path.nodes.length - 1;
 
-        if (n.isAnchor) {
-            dim = 4;
+    path.nodes.forEach((n, i) => {
+        if (!n.isAnchor || pathNumber !== activePath) {
+            ctx.fillRect(n.x, n.y, 1, 1);
+            return;
+        }
+        
+        let radius = 1;
+
+        if (pathNumber === activePath) {
+            radius = 4;
         }
 
-        ctx.fillRect(n.x - Math.round(dim / 2), n.y - Math.round(dim / 2), dim, dim);
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, radius, 0, 2 * Math.PI);
+        ctx.fill();
+
+        if (maxNodeIndex === i) {
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, radius + 2, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.fillStyle = "rgb(" + bgValue + ", " + bgValue + ", " + bgValue + ")";
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, radius, 0, 2 * Math.PI);
+            ctx.fill();
+
+            ctx.fillStyle = "rgb(" + nodeColor + ", " + nodeColor + ", " + nodeColor + ")";
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, radius - 2, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        //ctx.fillRect(n.x - Math.round(dim / 2), n.y - Math.round(dim / 2), dim, dim);
     });
 }
 
