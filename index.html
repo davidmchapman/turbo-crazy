@@ -1,6 +1,7 @@
 <!doctype html>
 
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,17 +9,51 @@
   <title>Turbo Crazy</title>
   <meta name="description" content="Turbo Crazy">
 
-  <link rel="stylesheet" href="css/styles.css?v=1.0">
+  <link rel="stylesheet" href="css/styles.css?v=1.1">
 
-  <script type="module" src="js/turbo-crazy.js"></script>
+  <script type="module" src="js/turbo-crazy.js?v=1.1"></script>
 </head>
 
 <body>
 
-  <div class="slidecontainer">
-    <input type="range" min="0" max="255" value="50" class="slider" id="bg-slider">
+  <div id="container">
+    <canvas id="canvas" height="700px"></canvas>
+    <div id="tools">
+      <div id="fps">
+      </div>
+      <div id="path-1" class="path selected-path">
+        path 1
+      </div>
+      <div id="path-2" class="path">
+        path 2
+      </div>
+      <div id="path-3" class="path">
+        path 3
+      </div>
+      <div id="path-4" class="path">
+        path 4
+      </div>
+      <div id="path-5" class="path">
+        path 5
+      </div>
+      <div id="path-6" class="path">
+        path 6
+      </div>
+      <div id="path-7" class="path">
+        path 7
+      </div>
+      <div id="path-8" class="path">
+        path 8
+      </div>
+      <div id="path-9" class="path">
+        path 9
+      </div>
+      <div id="path-10" class="path">
+        path 10
+      </div>
+    </div>
   </div>
-  <canvas id="game" width="1000" height="700" style="border:1px solid #000000;"></canvas>
+
   <div>
     <span id="swatch_005f73" class="swatch" style="background-color: #005f73;"></span>
     <span id="swatch_0a9396" class="swatch" style="background-color: #0a9396;"></span>
@@ -36,5 +71,10 @@
     <span id="swatch_4361ee" class="swatch" style="background-color: #4361ee;"></span>
   </div>
 
+  <div class="slidecontainer">
+    <input type="range" min="0" max="255" value="50" class="slider" id="bg-slider">
+  </div>
+
 </body>
+
 </html>

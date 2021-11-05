@@ -25,8 +25,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     window.scrollTo(0, 0);
 
-    c = document.getElementById('game');
+    let clientWidth = document.body.clientWidth;
+
+    if (clientWidth < 1000) {
+        alert('Please make your browser window wider and reload the page.');
+        return;
+    }
+
+    c = document.getElementById('canvas');
     ctx = c.getContext('2d');
+
+    ctx.canvas.width = clientWidth;
+
     cRect = c.getBoundingClientRect();
     bgSlider = document.getElementById("bg-slider");
 
@@ -40,6 +50,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
           e.preventDefault();  
         }  
       });
+
+    let pathDivs = document.getElementsByClassName('path');
+
+    for (let div of pathDivs) {
+        div.addEventListener('click', switchActivePath);
+    }
 
     document.getElementById('swatch_005f73').addEventListener('click', e => { ballColor = [0, 95, 115, 1] }, false);
     document.getElementById('swatch_0a9396').addEventListener('click', e => { ballColor = [10, 147, 150, 1] }, false);
@@ -56,8 +72,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.getElementById('swatch_3f37c9').addEventListener('click', e => { ballColor = [63, 55, 201, 1] }, false);
     document.getElementById('swatch_4361ee').addEventListener('click', e => { ballColor = [67, 97, 238, 1] }, false);
 
-    // initialize the paths map with 9 paths
-    for (let pathNumber = 1; pathNumber <= 9; pathNumber++) {
+    // initialize the paths map with 10 paths
+    for (let pathNumber = 1; pathNumber <= 10; pathNumber++) {
         paths.set(pathNumber, new Path())
     }
 
@@ -118,6 +134,19 @@ function checkKey(e) {
     }
 
     return false;
+}
+
+function switchActivePath(e) {
+    let pathNumber = e.target.id.split('-')[1];
+    activePath = parseInt(pathNumber);
+
+    let pathDivs = document.getElementsByClassName('path');
+
+    for (let div of pathDivs) {
+        div.classList.remove('selected-path');
+    }
+
+    document.getElementById('path-' + activePath).classList.add('selected-path');
 }
 
 function canvasClicked(e) {
@@ -184,12 +213,8 @@ function updateBgColor() {
 }
 
 function drawFps() {
-    // draw fps box to the screen
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, 48, 14);
-    ctx.font = '12px Arial';
-    ctx.fillStyle = 'black';
-    ctx.fillText("FPS: " + fps, 2, 12);
+    let fpsDiv = document.getElementById('fps');
+    fpsDiv.innerHTML = 'FPS: ' + fps;
 }
 
 function drawPaths() {
