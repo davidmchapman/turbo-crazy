@@ -57,6 +57,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
         div.addEventListener('click', switchActivePath);
     }
 
+    let undoSpans = document.getElementsByClassName('undo');
+
+    for (let span of undoSpans) {
+        span.addEventListener('click', removeNode);
+    }
+
+    let redoSpans = document.getElementsByClassName('redo');
+
+    for (let span of redoSpans) {
+        span.addEventListener('click', undoRemoveNode);
+    }
+
     document.getElementById('swatch_005f73').addEventListener('click', e => { ballColor = [0, 95, 115, 1] }, false);
     document.getElementById('swatch_0a9396').addEventListener('click', e => { ballColor = [10, 147, 150, 1] }, false);
     document.getElementById('swatch_94d2bd').addEventListener('click', e => { ballColor = [148, 210, 189, 1] }, false);
@@ -86,47 +98,71 @@ function checkKey(e) {
     switch (e.keyCode) {
         case 32: // spacebar
             let path = paths.get(activePath);
-            path.balls.push(new Ball(4, ballColor))
+            let ball = new Ball(4, ballColor);
+
+            // Don't add the ball to the path if it would 
+            // occupy the same node as another equal ball.
+            // You can only see one ball at each node.
+            let found = false;
+
+            for (let i = 0; i < path.balls.length; i++) {
+                if (path.balls[i].pathNodeIndex === 0) {
+                    found = true;
+
+                    if (!path.balls[i].equals(ball)) {
+                        path.balls[i] = ball;
+                    }
+                }
+            }
+
+            if (!found) {
+                path.balls.push(ball);
+            }
+
             break;
 
         case 72: // h key
             showPath = !showPath;
             break;
 
+        case 48: // 0 key
+            document.getElementById('path-10').click();
+            break;
+
         case 49: // 1 key
-            activePath = 1;
+            document.getElementById('path-1').click();
             break;
 
         case 50: // 2 key
-            activePath = 2;
+        document.getElementById('path-2').click();
             break;
 
         case 51: // 3 key
-            activePath = 3;
+        document.getElementById('path-3').click();
             break;
 
         case 52: // 4 key
-            activePath = 4;
+        document.getElementById('path-4').click();
             break;
 
         case 53: // 5 key
-            activePath = 5;
+        document.getElementById('path-5').click();
             break;
 
         case 54: // 6 key
-            activePath = 6;
+        document.getElementById('path-6').click();
             break;
 
         case 55: // 7 key
-            activePath = 7;
+        document.getElementById('path-7').click();
             break;
 
         case 56: // 8 key
-            activePath = 8;
+        document.getElementById('path-8').click();
             break;
 
         case 57: // 9 key
-            activePath = 9;
+        document.getElementById('path-9').click();
             break;
 
         default:
@@ -137,8 +173,26 @@ function checkKey(e) {
 }
 
 function switchActivePath(e) {
-    let pathNumber = e.target.id.split('-')[1];
-    activePath = parseInt(pathNumber);
+    window.getSelection().removeAllRanges();
+
+    let pathNumber = parseInt(e.currentTarget.id.split('-')[1]);
+    let clickedElement = e.target;
+
+    if (activePath === pathNumber) {
+        if (clickedElement.classList.contains('path-gear')) {
+            let settingsDiv = document.getElementById('path-' + activePath + '-settings');
+
+            if (settingsDiv.style.display === 'none') {
+                settingsDiv.style.display = 'block';
+            } else {
+                settingsDiv.style.display = 'none';
+            }
+        }
+
+        return;
+    }
+    
+    activePath = pathNumber;
 
     let pathDivs = document.getElementsByClassName('path');
 
@@ -146,14 +200,39 @@ function switchActivePath(e) {
         div.classList.remove('selected-path');
     }
 
+    let pathGearSpans = document.getElementsByClassName('path-gear');
+
+    for (let span of pathGearSpans) {
+        span.style.removeProperty('background-color');
+        span.style.removeProperty('color');
+    }
+
+    let pathSettingsDivs = document.getElementsByClassName('path-settings');
+
+    for (let div of pathSettingsDivs) {
+        div.style.display = "none";
+    }
+
+    let activePathGearSpan = document.getElementById('path-' + activePath + '-gear');
+    activePathGearSpan.style.backgroundColor = 'white';
+    activePathGearSpan.style.color = 'black';
+
     document.getElementById('path-' + activePath).classList.add('selected-path');
+
+    if (clickedElement.classList.contains('path-gear')) {
+        let settingsDiv = document.getElementById('path-' + activePath + '-settings');
+        settingsDiv.style.display = "block";
+    }
 }
 
 function canvasClicked(e) {
     let x = e.clientX + window.scrollX - Math.round(cRect.x) - 1;
     let y = e.clientY + window.scrollY - Math.round(cRect.y) - 3;
 
-    addToNodes(x, y);
+    let path = paths.get(activePath);
+    
+    path.redo = [];
+    addToNodes(path, x, y);
 }
 
 function bgSliderInput(e) {
@@ -172,9 +251,8 @@ function gameLoop(timestamp) {
     window.requestAnimationFrame(gameLoop);
 }
 
-function addToNodes(x, y) {
+function addToNodes(path, x, y) {
 
-    let path = paths.get(activePath);
     let priorNode = path.nodes.at(-1);
     if (priorNode === undefined) {
         path.nodes.push(new PathNode(x, y, true));
@@ -200,14 +278,45 @@ function addToNodes(x, y) {
     }
 }
 
+function removeNode() {
+
+    let path = paths.get(activePath);
+    let lastNode = path.nodes.pop();
+    path.redo.push(lastNode);
+
+    // also need to remove all the other
+    // node up to the now-last anchor node
+    if (path.nodes.length > 0) {
+        while (!path.nodes.at(-1).isAnchor) {
+            path.nodes.pop();
+        }
+    }
+
+    for (let i = path.balls.length - 1; i >= 0; i--) {
+        if (path.balls[i].pathNodeIndex > path.nodes.length) {
+            path.balls.splice(i, 1);
+        }
+    }
+}
+
+function undoRemoveNode() {
+
+    let path = paths.get(activePath);
+    let node = path.redo.pop();
+
+    if (node !== undefined) {
+        addToNodes(path, node.x, node.y);
+    }
+}
+
 function draw() {
     
-    updateBgColor();
+    drawBackground();
     drawFps();
     drawPaths();
 }
 
-function updateBgColor() {
+function drawBackground() {
     ctx.fillStyle = "rgb(" + bgValue + ", " + bgValue + ", " + bgValue + ")";
     ctx.fillRect(0, 0, c.width, c.height);
 }
@@ -266,8 +375,6 @@ function drawPathNodes(pathNumber, path) {
             ctx.arc(n.x, n.y, radius - 2, 0, 2 * Math.PI);
             ctx.fill();
         }
-
-        //ctx.fillRect(n.x - Math.round(dim / 2), n.y - Math.round(dim / 2), dim, dim);
     });
 }
 

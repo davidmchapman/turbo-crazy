@@ -8,7 +8,7 @@ body {
     width: 1000px; /* width of the outside container */
     margin-top: 10px;
 }
-  
+
 .slider {
     -webkit-appearance: none;
     width: 100%;
@@ -68,7 +68,7 @@ span.swatch {
 
 /* tools */
 #tools {
-    width: 80px;
+    width: 90px;
     height: 700px;
     margin: 0px;
     position: absolute;
@@ -79,14 +79,28 @@ span.swatch {
     z-index: 2;
 }
 
-#tools div {
-    padding-left: 8px;
-    padding-top: 8px;
-    padding-bottom: 8px;
+#tools #fps {
+    margin-left: 4px;
+    margin-top: 4px;
 }
 
 #tools .path {
     cursor: pointer;
+}
+
+#tools .path-name {
+    vertical-align: middle;
+    line-height: 24px;
+}
+
+#tools .path-gear {
+    padding-left: 4px;
+    padding-right: 4px;
+    font-size: 20px;
+    line-height: 24px;
+    vertical-align: middle;
+    padding-top: 0px;
+    padding-bottom: 1px;
 }
 
 #tools .path:hover:not(.selected-path) {
@@ -97,4 +111,31 @@ span.swatch {
 #tools .selected-path {
     background-color: aquamarine;
     color: black;
+}
+
+#tools .path-settings {
+    display: none;
+    background-color: white;
+    color: black;
+    border-top: 2px solid black;
+    padding-top: 12px;
+    padding-bottom: 24px;
+    padding-left: 0px;
+}
+
+#tools .undo {
+    float: left;
+    cursor: pointer;
+}
+
+#tools .redo {
+    float: right;
+    cursor: pointer;
+    margin-right: 4px;
+}
+
+.clearfix::after {
+    content: "";
+    clear: both;
+    display: table;
 }
