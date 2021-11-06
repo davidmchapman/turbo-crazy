@@ -1,7 +1,7 @@
-import { Ball } from './ball.js';
-import { Path } from './path.js';
-import { PathNode } from './path-node.js';
-import { Vector } from './vector.js';
+import { Ball } from './ball.js?v=1.1';
+import { Path } from './path.js?v=1.1';
+import { PathNode } from './path-node.js?v=1.1';
+import { Vector } from './vector.js?v=1.1';
 
 let c;
 let ctx;
