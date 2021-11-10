@@ -44,12 +44,6 @@ body {
     opacity: 1; /* fully shown on mouse-over */
 }
 
-span.swatch {
-    display: inline-block;
-    width: 68px;
-    height: 40px;
-}
-
 /* canvas and tools overlay */
 #container {
     position: relative;
@@ -59,11 +53,27 @@ span.swatch {
 
 #canvas {
     margin: 0px;
+    display: inline-block;
     position: relative;
     border: 1px solid #000000;
     top: 0px;
     left: 0px;
     z-index: 1;
+}
+
+#swatch-container {
+    display: inline-block;
+    position: absolute;
+    width: 100px;
+    top: 0;
+    margin-left: 1px;
+}
+
+.swatch {
+    display: inline-block;
+    width: 48px;
+    height: 30px;
+    font-size: 0;
 }
 
 /* tools */
@@ -76,7 +86,8 @@ span.swatch {
     border: 1px solid #000000;
     top: 0px;
     left: 0px;
-    z-index: 2;
+    z-index: 3;
+    display: inline-block;
 }
 
 #tools #fps {
@@ -85,22 +96,69 @@ span.swatch {
 }
 
 #tools .path {
+    position: relative;
+    display: inline-block;
     cursor: pointer;
+    width: 100%;
 }
 
 #tools .path-name {
-    vertical-align: middle;
-    line-height: 24px;
+    position: relative;
+    padding-left: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    display: inline-block;
+    width: 60px;
 }
 
-#tools .path-gear {
-    padding-left: 4px;
-    padding-right: 4px;
-    font-size: 20px;
-    line-height: 24px;
-    vertical-align: middle;
-    padding-top: 0px;
-    padding-bottom: 1px;
+#tools .path-toggle {
+    position: relative;
+    padding-left: 3px;
+    padding-right: 5px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    text-align: right;
+    display: none;
+    background-color: white;
+    width: 14px;
+}
+
+#path-editor {
+    position: absolute;
+    width: 120px;
+    height: 692px;
+    top: 0px;
+    left: 91px;
+    color: black;
+    background-color: white;
+    border: 1px solid #000000;
+    padding: 4px;
+    opacity: 0.9;
+    display: none;
+    /*transform: translateX(-100%);*/
+    z-index: 2;
+}
+
+#tools .slide-in {
+    animation: slide-in 0.5s forwards;
+}
+
+#tools .slide-out {
+    animation: slide-out 0.5s forwards;
+}
+
+@keyframes slide-in {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+    /*100% { transform: translateX(0%); }*/
+}
+
+@keyframes slide-out {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+
+    /*0% { transform: translateX(0%); }
+    100% { transform: translateX(-100%); }*/
 }
 
 #tools .path:hover:not(.selected-path) {
@@ -123,12 +181,12 @@ span.swatch {
     padding-left: 0px;
 }
 
-#tools .undo {
+#path-editor #undo {
     float: left;
     cursor: pointer;
 }
 
-#tools .redo {
+#path-editor #redo {
     float: right;
     cursor: pointer;
     margin-right: 4px;

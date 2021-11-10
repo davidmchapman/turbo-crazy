@@ -19,7 +19,7 @@ let paths = new Map();
 let ballColor = [247, 37, 133, 1];
 let showPath = true;
 
-let activePath = 1;
+let activePath = -1;
 
 document.addEventListener('DOMContentLoaded', (event) => {
 
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     let clientWidth = document.body.clientWidth;
 
-    if (clientWidth < 1000) {
+    if (clientWidth < 700) {
         alert('Please make your browser window wider and reload the page.');
         return;
     }
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     c = document.getElementById('canvas');
     ctx = c.getContext('2d');
 
-    ctx.canvas.width = clientWidth;
+    ctx.canvas.width = clientWidth - 100;
 
     cRect = c.getBoundingClientRect();
     bgSlider = document.getElementById("bg-slider");
@@ -57,17 +57,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
         div.addEventListener('click', switchActivePath);
     }
 
-    let undoSpans = document.getElementsByClassName('undo');
+    document.getElementById('undo').addEventListener('click', removeNode);
 
-    for (let span of undoSpans) {
-        span.addEventListener('click', removeNode);
-    }
-
-    let redoSpans = document.getElementsByClassName('redo');
-
-    for (let span of redoSpans) {
-        span.addEventListener('click', undoRemoveNode);
-    }
+    document.getElementById('redo').addEventListener('click', undoRemoveNode);
 
     document.getElementById('swatch_005f73').addEventListener('click', e => { ballColor = [0, 95, 115, 1] }, false);
     document.getElementById('swatch_0a9396').addEventListener('click', e => { ballColor = [10, 147, 150, 1] }, false);
@@ -88,6 +80,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
     for (let pathNumber = 1; pathNumber <= 10; pathNumber++) {
         paths.set(pathNumber, new Path())
     }
+
+    let pathEditor = document.getElementById('path-editor');
+    let pathToggles = document.getElementsByClassName('path-toggle');
+    
+    for (let pathToggle of pathToggles) {
+        pathToggle.addEventListener('click', function() {
+            if (pathEditor.style.display === 'none') {
+                pathEditor.style.display = 'block';
+                pathToggle.innerHTML = '<';
+            } else {
+                pathEditor.style.display = 'none';
+                pathToggle.innerHTML = '>';
+            }
+        });
+    }
+
+    // make path-1 the active path
+    document.getElementById('path-1').click();
 
     window.requestAnimationFrame(gameLoop);
 });
@@ -179,16 +189,6 @@ function switchActivePath(e) {
     let clickedElement = e.target;
 
     if (activePath === pathNumber) {
-        if (clickedElement.classList.contains('path-gear')) {
-            let settingsDiv = document.getElementById('path-' + activePath + '-settings');
-
-            if (settingsDiv.style.display === 'none') {
-                settingsDiv.style.display = 'block';
-            } else {
-                settingsDiv.style.display = 'none';
-            }
-        }
-
         return;
     }
     
@@ -200,28 +200,23 @@ function switchActivePath(e) {
         div.classList.remove('selected-path');
     }
 
-    let pathGearSpans = document.getElementsByClassName('path-gear');
+    let pathToggleSpans = document.getElementsByClassName('path-toggle');
 
-    for (let span of pathGearSpans) {
-        span.style.removeProperty('background-color');
-        span.style.removeProperty('color');
+    for (let span of pathToggleSpans) {
+        span.style.display = 'none';
     }
 
-    let pathSettingsDivs = document.getElementsByClassName('path-settings');
+    let parentPathDiv = document.getElementById('path-' + activePath);
+    parentPathDiv.classList.add('selected-path');
 
-    for (let div of pathSettingsDivs) {
-        div.style.display = "none";
-    }
+    let pathEditor = document.getElementById('path-editor');
+    let toggleSpan = parentPathDiv.querySelector('.path-toggle');
+    toggleSpan.style.display = 'inline-block';
 
-    let activePathGearSpan = document.getElementById('path-' + activePath + '-gear');
-    activePathGearSpan.style.backgroundColor = 'white';
-    activePathGearSpan.style.color = 'black';
-
-    document.getElementById('path-' + activePath).classList.add('selected-path');
-
-    if (clickedElement.classList.contains('path-gear')) {
-        let settingsDiv = document.getElementById('path-' + activePath + '-settings');
-        settingsDiv.style.display = "block";
+    if (pathEditor.style.display === 'none') {
+        toggleSpan.innerHTML = '>';
+    } else {
+        toggleSpan.innerHTML = '<';
     }
 }
 
