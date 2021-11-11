@@ -61,7 +61,7 @@ body {
     z-index: 1;
 }
 
-#swatch-container {
+#palette-container {
     display: inline-block;
     position: absolute;
     width: 100px;
@@ -69,10 +69,26 @@ body {
     margin-left: 1px;
 }
 
+#palette-container .palette {
+    margin-bottom: 4px;
+    cursor: pointer;
+}
+
+#swatch-container {
+    display: inline-block;
+    position: absolute;
+    border-top: 4px solid black;
+    padding-top: 8px;
+    width: 100px;
+    top: 369px;
+    margin-left: 1px;
+}
+
 .swatch {
     display: inline-block;
-    width: 48px;
-    height: 30px;
+    border: 2px solid transparent;
+    width: 96px;
+    height: 20px;
     font-size: 0;
 }
 

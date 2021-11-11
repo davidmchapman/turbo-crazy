@@ -1,4 +1,4 @@
-import { Ball } from './ball.js?v=1.1';
+import { Ball } from './ball.js?v=1.2';
 import { Path } from './path.js?v=1.1';
 import { PathNode } from './path-node.js?v=1.1';
 import { Vector } from './vector.js?v=1.1';
@@ -16,9 +16,10 @@ let bgValue;
 
 let paths = new Map();
 
-let ballColor = [247, 37, 133, 1];
+let ballColor = '#000000';
 let showPath = true;
 
+let activePalette = -1;
 let activePath = -1;
 
 document.addEventListener('DOMContentLoaded', (event) => {
@@ -61,20 +62,17 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     document.getElementById('redo').addEventListener('click', undoRemoveNode);
 
-    document.getElementById('swatch_005f73').addEventListener('click', e => { ballColor = [0, 95, 115, 1] }, false);
-    document.getElementById('swatch_0a9396').addEventListener('click', e => { ballColor = [10, 147, 150, 1] }, false);
-    document.getElementById('swatch_94d2bd').addEventListener('click', e => { ballColor = [148, 210, 189, 1] }, false);
-    document.getElementById('swatch_e9d8a6').addEventListener('click', e => { ballColor = [233, 216, 166, 1] }, false);
-    document.getElementById('swatch_ee9b00').addEventListener('click', e => { ballColor = [238, 155, 0, 1] }, false);
-    document.getElementById('swatch_ca6702').addEventListener('click', e => { ballColor = [202, 103, 2, 1] }, false);
-    document.getElementById('swatch_bb3e03').addEventListener('click', e => { ballColor = [187, 62, 3, 1] }, false);
-    document.getElementById('swatch_ae2012').addEventListener('click', e => { ballColor = [174, 32, 18, 1] }, false);
-    document.getElementById('swatch_f72585').addEventListener('click', e => { ballColor = [247, 37, 133, 1] }, false);
-    document.getElementById('swatch_b5179e').addEventListener('click', e => { ballColor = [181, 23, 158, 1] }, false);
-    document.getElementById('swatch_7209b7').addEventListener('click', e => { ballColor = [114, 9, 183, 1] }, false);
-    document.getElementById('swatch_560bad').addEventListener('click', e => { ballColor = [86, 11, 173, 1] }, false);
-    document.getElementById('swatch_3f37c9').addEventListener('click', e => { ballColor = [63, 55, 201, 1] }, false);
-    document.getElementById('swatch_4361ee').addEventListener('click', e => { ballColor = [67, 97, 238, 1] }, false);
+    let palettes = document.getElementsByClassName('palette');
+
+    for (let palette of palettes) {
+        palette.addEventListener('click', switchPalette);
+    }
+
+    let swatches = document.getElementsByClassName('swatch');
+
+    for (let swatch of swatches) {
+        swatch.addEventListener('click', switchColor);
+    }
 
     // initialize the paths map with 10 paths
     for (let pathNumber = 1; pathNumber <= 10; pathNumber++) {
@@ -95,6 +93,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
             }
         });
     }
+
+    // make pallete-1 the active palette
+    document.getElementById('palette-7').click();
 
     // make path-1 the active path
     document.getElementById('path-1').click();
@@ -144,35 +145,35 @@ function checkKey(e) {
             break;
 
         case 50: // 2 key
-        document.getElementById('path-2').click();
+            document.getElementById('path-2').click();
             break;
 
         case 51: // 3 key
-        document.getElementById('path-3').click();
+            document.getElementById('path-3').click();
             break;
 
         case 52: // 4 key
-        document.getElementById('path-4').click();
+            document.getElementById('path-4').click();
             break;
 
         case 53: // 5 key
-        document.getElementById('path-5').click();
+            document.getElementById('path-5').click();
             break;
 
         case 54: // 6 key
-        document.getElementById('path-6').click();
+            document.getElementById('path-6').click();
             break;
 
         case 55: // 7 key
-        document.getElementById('path-7').click();
+            document.getElementById('path-7').click();
             break;
 
         case 56: // 8 key
-        document.getElementById('path-8').click();
+            document.getElementById('path-8').click();
             break;
 
         case 57: // 9 key
-        document.getElementById('path-9').click();
+            document.getElementById('path-9').click();
             break;
 
         default:
@@ -180,6 +181,112 @@ function checkKey(e) {
     }
 
     return false;
+}
+
+function switchPalette(e) {
+    window.getSelection().removeAllRanges();
+
+    let paletteNumber = parseInt(e.currentTarget.id.split('-')[1]);
+console.log(paletteNumber);
+    if (paletteNumber === activePalette) {
+        return;
+    }
+
+    switch (paletteNumber) {
+        case 1:
+            buildSwatches(['#FFF0F3','#FFCCD5','#FFB3C1','#FF8FA3','#FF758F','#FF4D6D','#C9184A','#A4133C','#800F2F','#590D22']);
+            break;
+
+        case 2:
+            buildSwatches(['#F8F9FA','#E9ECEF','#DEE2E6','#CED4DA','#ADB5BD','#6C757D','#495057','#343A40','#212529']);
+            break;
+
+        case 3:
+            buildSwatches(['#80FFDB','#72EFDD','#64DFDF','#56CFE1','#48BFE3','#4EA8DE','#5390D9','#5E60CE','#6930C3','#7400B8']);
+            break;
+
+        case 4:
+            buildSwatches(['#FFFFFC','#FFC6FF','#BDB2FF','#A0C4FF','#9BF6FF','#CAFFBF','#FDFFB6','#FFD6A5','#FFADAD']);
+            break;
+
+        case 5:
+            buildSwatches(['#FFBA08','#FAA307','#F48C06','#E85D04','#DC2F02','#D00000','#9D0208','#6A040F','#370617','#03071E']);
+            break;
+
+        case 6:
+            buildSwatches(['#E63946','#F1FAEE','#A8DADC','#457B9D','#1D3557']);
+            break;
+
+        case 7:
+            buildSwatches(['#FF0000','#FF8700','#FFD300','#DEFF0A','#A1FF0A','#0AFF99', '#0AEFFF','#147DF5','#580AFF','#BE0AFF']);
+            break;
+
+        case 8:
+            buildSwatches(['#CCFF33','#9EF01A','#70E000','#38B000','#008000','#007200','#006400','#004B23']);
+            break;
+
+        case 9:
+            buildSwatches(['#E0AAFF','#C77DFF','#9D4EDD','#7B2CBF','#5A189A','#3C096C','#240046','#10002B']);
+            break;
+
+        case 10:
+            buildSwatches(['#FF595E','#FFCA3A','#8AC926','#1982C4','#6A4C93']);
+            break;
+
+        case 11:
+            buildSwatches(['#E3F2FD','#BBDEFB','#90CAF9','#64B5F6','#42A5F5','#2196F3','#1E88E5','#1976D2','#1565C0','#0D47A1']);
+            break;
+
+        case 12:
+            buildSwatches(['#FFEA00','#FFDD00','#FFD000','#FFC300','#FFB700','#FFAA00','#FFA200','#FF9500','#FF8800','#FF7B00']);
+            break;
+
+        case 13:
+            buildSwatches(['#EDC4B3','#E6B8A2','#DEAB90','#D69F7E','#CD9777','#C38E70','#B07D62','#9D6B53','#8A5A44','#774936']);
+            break;
+
+        case 14:
+            buildSwatches(['#000000']);
+            break;
+
+        default:
+            break;
+    }
+
+    document.getElementById('swatch-1').click();
+}
+
+function buildSwatches(colors) {
+    let maxIndex = colors.length;
+
+    for (let i = 1; i <= 12; i++) {
+        let swatch = document.getElementById('swatch-' + i);
+
+        swatch.style.borderColor = 'transparent';
+        swatch.style.backgroundColor = 'transparent';
+
+        if (i - 1 < maxIndex) {
+            swatch.style.backgroundColor = colors[i - 1];
+        }
+    }
+}
+
+function switchColor(e) {    
+    let swatchNumber = parseInt(e.currentTarget.id.split('-')[1]);
+    let clickedSwatch = document.getElementById('swatch-' + swatchNumber);
+    
+    if (clickedSwatch.style.backgroundColor === 'transparent') {
+        return;
+    }
+
+    let swatches = document.getElementsByClassName('swatch');
+
+    for (let swatch of swatches) {
+        swatch.style.borderColor = 'transparent';
+    }
+
+    ballColor = clickedSwatch.style.backgroundColor;
+    clickedSwatch.style.borderColor = 'red';
 }
 
 function switchActivePath(e) {
@@ -387,7 +494,7 @@ function drawPathBalls(path) {
 
         ctx.beginPath();
         ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI);
-        ctx.fillStyle = "rgba(" + b.rgbaArray[0] + ", " + b.rgbaArray[1] + ", " + b.rgbaArray[2] + ", " + b.rgbaArray[3] + ")";
+        ctx.fillStyle = b.rgbColor;
         ctx.fill();
     });
 }

@@ -1,11 +1,11 @@
 export class Ball {
     pathNodeIndex = 0;
     size;
-    rgbaArray;
+    rgbColor;
 
-    constructor(size, rgbaArray) {
+    constructor(size, rgbColor) {
         this.size = size;
-        this.rgbaArray = rgbaArray;
+        this.rgbColor = rgbColor;
     }
 
     equals (ball) {
@@ -13,6 +13,10 @@ export class Ball {
             return false;
         }
 
-        return this.rgbaArray.length === ball.rgbaArray.length && this.rgbaArray.every((value, i) => value === ball.rgbaArray[i]);
+        if (this.rgbColor !== ball.rgbColor) {
+            return false;
+        }
+
+        return true;
     }
 }
