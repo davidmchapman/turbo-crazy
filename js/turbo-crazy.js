@@ -105,9 +105,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
 function checkKey(e) {
     e.preventDefault();
-
-    switch (e.keyCode) {
-        case 32: // spacebar
+    
+    switch (e.code) {
+        case 'Space':
             let path = paths.get(activePath);
             let ball = new Ball(4, ballColor);
 
@@ -132,57 +132,67 @@ function checkKey(e) {
 
             break;
 
-        case 72: // h key
+        case 'KeyH':
             showPath = !showPath;
             break;
 
-        case 48: // 0 key
+        case 'Digit0':
+        case 'Numpad0':
             document.getElementById('path-10').click();
             break;
 
-        case 49: // 1 key
+        case 'Digit1':
+        case 'Numpad1':
             document.getElementById('path-1').click();
             break;
 
-        case 50: // 2 key
+        case 'Digit2':
+        case 'Numpad2':
             document.getElementById('path-2').click();
             break;
 
-        case 51: // 3 key
+        case 'Digit3':
+        case 'Numpad3':
             document.getElementById('path-3').click();
             break;
 
-        case 52: // 4 key
+        case 'Digit4':
+        case 'Numpad4':
             document.getElementById('path-4').click();
             break;
 
-        case 53: // 5 key
+        case 'Digit5':
+        case 'Numpad5':
             document.getElementById('path-5').click();
             break;
 
-        case 54: // 6 key
+        case 'Digit6':
+        case 'Numpad6':
             document.getElementById('path-6').click();
             break;
 
-        case 55: // 7 key
+        case 'Digit7':
+        case 'Numpad7':
             document.getElementById('path-7').click();
             break;
 
-        case 56: // 8 key
+        case 'Digit8':
+        case 'Numpad8':
             document.getElementById('path-8').click();
             break;
 
-        case 57: // 9 key
+        case 'Digit9':
+        case 'Numpad9':
             document.getElementById('path-9').click();
             break;
 
-        case 109:
-        case 189:
+        case 'Minus':
+        case 'NumpadSubtract':
             adjustSpeed(-1);
             break;
 
-        case 107:
-        case 187:
+        case 'Equal':
+        case 'NumpadAdd':
             adjustSpeed(1);
             break;
         
