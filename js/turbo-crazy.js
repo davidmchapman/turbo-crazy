@@ -187,7 +187,7 @@ function switchPalette(e) {
     window.getSelection().removeAllRanges();
 
     let paletteNumber = parseInt(e.currentTarget.id.split('-')[1]);
-console.log(paletteNumber);
+    
     if (paletteNumber === activePalette) {
         return;
     }
