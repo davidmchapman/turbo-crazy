@@ -139,22 +139,6 @@ body {
     width: 14px;
 }
 
-#path-editor {
-    position: absolute;
-    width: 120px;
-    height: 692px;
-    top: 0px;
-    left: 91px;
-    color: black;
-    background-color: white;
-    border: 1px solid #000000;
-    padding: 4px;
-    opacity: 0.9;
-    display: none;
-    /*transform: translateX(-100%);*/
-    z-index: 2;
-}
-
 #tools .slide-in {
     animation: slide-in 0.5s forwards;
 }
@@ -197,15 +181,52 @@ body {
     padding-left: 0px;
 }
 
+#path-editor {
+    position: absolute;
+    width: 120px;
+    height: 692px;
+    top: 0px;
+    left: 91px;
+    color: black;
+    background-color: white;
+    border: 1px solid #000000;
+    padding: 4px;
+    opacity: 0.9;
+    display: none;
+    /*transform: translateX(-100%);*/
+    z-index: 2;
+}
+
+.path-editor-heading {
+    font-weight: bold;
+    color: red;
+    margin-top: 2px;
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.path-editor-heading-spacer {
+    margin-bottom: 8px;
+}
+
 #path-editor #undo {
     float: left;
     cursor: pointer;
+    margin-left: 4px;
 }
 
 #path-editor #redo {
     float: right;
     cursor: pointer;
     margin-right: 4px;
+}
+
+#path-editor #ball-slower {
+    cursor: pointer;
+}
+
+#path-editor #ball-faster {
+    cursor: pointer;
 }
 
 .clearfix::after {

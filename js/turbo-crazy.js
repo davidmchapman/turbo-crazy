@@ -94,6 +94,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     }
 
+    document.getElementById('ball-slower').addEventListener('click', reduceSpeed);
+    document.getElementById('ball-faster').addEventListener('click', increaseSpeed);
+
     // make pallete-1 the active palette
     document.getElementById('palette-7').click();
 
@@ -105,7 +108,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
 function checkKey(e) {
     e.preventDefault();
-    
+
     switch (e.code) {
         case 'Space':
             let path = paths.get(activePath);
@@ -134,6 +137,14 @@ function checkKey(e) {
 
         case 'KeyH':
             showPath = !showPath;
+            break;
+
+        case 'KeyR':
+            undoRemoveNode();
+            break;
+
+        case 'KeyU':
+            removeNode();
             break;
 
         case 'Digit0':
@@ -203,7 +214,16 @@ function checkKey(e) {
     return false;
 }
 
+function reduceSpeed() {
+    adjustSpeed(-1);
+}
+
+function increaseSpeed() {
+    adjustSpeed(1);
+}
+
 function adjustSpeed(adjustment) {
+    window.getSelection().removeAllRanges();
     let path = paths.get(activePath);
     path.adjustSpeed(adjustment);
 }
@@ -408,7 +428,13 @@ function addToNodes(path, x, y) {
 function removeNode() {
 
     let path = paths.get(activePath);
+
     let lastNode = path.nodes.pop();
+
+    if (lastNode === undefined) {
+        return;
+    }
+
     path.redo.push(lastNode);
 
     // also need to remove all the other
