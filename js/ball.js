@@ -1,8 +1,8 @@
 export class Ball {
     pathNodeIndex = 0;
-    size;
     rgbColor;
-
+    size;
+    
     constructor(size, rgbColor) {
         this.size = size;
         this.rgbColor = rgbColor;

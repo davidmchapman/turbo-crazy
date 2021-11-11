@@ -1,5 +1,5 @@
-import { Ball } from './ball.js?v=1.2';
-import { Path } from './path.js?v=1.1';
+import { Ball } from './ball.js?v=1.3';
+import { Path } from './path.js?v=1.2';
 import { PathNode } from './path-node.js?v=1.1';
 import { Vector } from './vector.js?v=1.1';
 
@@ -176,11 +176,26 @@ function checkKey(e) {
             document.getElementById('path-9').click();
             break;
 
+        case 109:
+        case 189:
+            adjustSpeed(-1);
+            break;
+
+        case 107:
+        case 187:
+            adjustSpeed(1);
+            break;
+        
         default:
             break;
     }
 
     return false;
+}
+
+function adjustSpeed(adjustment) {
+    let path = paths.get(activePath);
+    path.adjustSpeed(adjustment);
 }
 
 function switchPalette(e) {
@@ -488,7 +503,12 @@ function drawPathBalls(path) {
     }
 
     path.balls.forEach(b => {
-        let newIndex = b.pathNodeIndex >= maxNodeIndex ? 0 : b.pathNodeIndex + 1;
+        let newIndex = (b.pathNodeIndex + path.speed) % path.nodes.length;
+        
+        if (newIndex < 0) {
+            newIndex = path.nodes.length + newIndex;
+        }
+
         b.pathNodeIndex = newIndex;
         let node = path.nodes[newIndex];
 
