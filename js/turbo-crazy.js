@@ -1,5 +1,5 @@
 import { Ball } from './ball.js?v=1.4';
-import { Path } from './path.js?v=1.3';
+import { Path } from './path.js?v=1.4';
 import { PathNode } from './path-node.js?v=1.1';
 import { Vector } from './vector.js?v=1.1';
 
@@ -96,6 +96,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     document.getElementById('ball-slower').addEventListener('click', reduceSpeed);
     document.getElementById('ball-faster').addEventListener('click', increaseSpeed);
+    document.getElementById('ball-smaller').addEventListener('click', reduceSize);
+    document.getElementById('ball-larger').addEventListener('click', increaseSize);
+    document.getElementById('twirly').addEventListener('click', toggleTwirl);
 
     // make pallete-1 the active palette
     document.getElementById('palette-7').click();
@@ -112,7 +115,7 @@ function checkKey(e) {
     switch (e.code) {
         case 'Space':
             let path = paths.get(activePath);
-            let ball = new Ball(4, ballColor);
+            let ball = new Ball(path.ballSize, ballColor);
 
             // Don't add the ball to the path if it would 
             // occupy the same node as another equal ball.
@@ -139,8 +142,16 @@ function checkKey(e) {
             showPath = !showPath;
             break;
 
+        case 'KeyL':
+            adjustSize(1);
+            break;
+
         case 'KeyR':
             undoRemoveNode();
+            break;
+
+        case 'KeyS':
+            adjustSize(-1);
             break;
 
         case 'KeyT':
@@ -221,6 +232,20 @@ function checkKey(e) {
 function toggleTwirl() {
     let path = paths.get(activePath);
     path.isTwirling = !path.isTwirling;
+}
+
+function reduceSize() {
+    adjustSize(-1);
+}
+
+function increaseSize() {
+    adjustSize(1);
+}
+
+function adjustSize(adjustment) {
+    window.getSelection().removeAllRanges();
+    let path = paths.get(activePath);
+    path.adjustSize(adjustment);
 }
 
 function reduceSpeed() {
@@ -560,7 +585,7 @@ function drawPathBalls(path) {
         let [offsetX, offsetY] = twirlingOffset(path, node, b);
 
         ctx.beginPath();
-        ctx.arc(offsetX, offsetY, 6, 0, 2 * Math.PI);
+        ctx.arc(offsetX, offsetY, b.size, 0, 2 * Math.PI);
         ctx.fillStyle = b.rgbColor;
         ctx.fill();
     });

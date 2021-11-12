@@ -9,9 +9,9 @@
   <title>Turbo Crazy</title>
   <meta name="description" content="Turbo Crazy">
 
-  <link rel="stylesheet" href="css/styles.min.css?v=1.2">
+  <link rel="stylesheet" href="css/styles.min.css?v=1.3">
 
-  <script type="module" src="js/turbo-crazy.min.js?v=1.6"></script>
+  <script type="module" src="js/turbo-crazy.min.js?v=1.7"></script>
 </head>
 
 <body>
@@ -94,13 +94,21 @@
     <div id="path-editor" style="display: none;">
       <p class="path-editor-heading">path building</p>
       <div class="clearfix">
-        <span id="undo">undo</span>
-        <span id="redo">redo</span>
+        <span id="undo" class="editor-option">undo</span>
+        <span id="redo" class="editor-option">redo</span>
       </div>
       <div class="path-editor-heading-spacer">&nbsp;</div>
       <p class="path-editor-heading">ball properties</p>
       <div style="text-align: center;">
-        <span id="ball-slower">&nbsp;&lt;&lt;&lt;&nbsp;</span>&nbsp;speed&nbsp;<span id="ball-faster">&nbsp;&gt;&gt;&gt;&nbsp;</span>
+        <span id="ball-slower" class="editor-option">&nbsp;&lt;&lt;&lt;&nbsp;</span>&nbsp;speed&nbsp;<span id="ball-faster" class="editor-option">&nbsp;&gt;&gt;&gt;&nbsp;</span>
+      </div>
+      <div class="ball-prop" style="text-align: center;">
+        <span id="ball-smaller" class="editor-option">&nbsp;&lt;&lt;&lt;&nbsp;</span>&nbsp;size&nbsp;<span id="ball-larger" class="editor-option">&nbsp;&gt;&gt;&gt;&nbsp;</span>
+      </div>
+      <div class="path-editor-heading-spacer">&nbsp;</div>
+      <p class="path-editor-heading">ball effects</p>
+      <div style="text-align: center;">
+        <span id="twirly" class="editor-option">twirly</span>
       </div>
     </div>
   </div>
