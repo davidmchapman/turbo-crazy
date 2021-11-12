@@ -1,5 +1,5 @@
-import { Ball } from './ball.js?v=1.3';
-import { Path } from './path.js?v=1.2';
+import { Ball } from './ball.js?v=1.4';
+import { Path } from './path.js?v=1.3';
 import { PathNode } from './path-node.js?v=1.1';
 import { Vector } from './vector.js?v=1.1';
 
@@ -143,6 +143,10 @@ function checkKey(e) {
             undoRemoveNode();
             break;
 
+        case 'KeyT':
+            toggleTwirl();
+            break;
+
         case 'KeyU':
             removeNode();
             break;
@@ -212,6 +216,11 @@ function checkKey(e) {
     }
 
     return false;
+}
+
+function toggleTwirl() {
+    let path = paths.get(activePath);
+    path.isTwirling = !path.isTwirling;
 }
 
 function reduceSpeed() {
@@ -414,7 +423,7 @@ function addToNodes(path, x, y) {
     let currentPosition = priorNodeVector.clone();
 
     while (true) {
-        currentPosition = Vector.multiply(direction, 16).add(currentPosition);
+        currentPosition = Vector.multiply(direction, 8).add(currentPosition);
 
         if (Vector.distance(priorNodeVector, currentPosition) < distance) {
             path.nodes.push(new PathNode(currentPosition.x, currentPosition.y, false));
@@ -548,9 +557,26 @@ function drawPathBalls(path) {
         b.pathNodeIndex = newIndex;
         let node = path.nodes[newIndex];
 
+        let [offsetX, offsetY] = twirlingOffset(path, node, b);
+
         ctx.beginPath();
-        ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI);
+        ctx.arc(offsetX, offsetY, 6, 0, 2 * Math.PI);
         ctx.fillStyle = b.rgbColor;
         ctx.fill();
     });
+}
+
+function twirlingOffset(path, node, ball) {
+    if (!path.isTwirling) {
+        return [node.x, node.y];
+    }
+
+    ball.updateTwirlAngle();
+
+    // use parametric equations of a circle
+    // to calculate the twirling offset.
+    let x = node.x + 15 * Math.cos(ball.twirlAngle);
+    let y = node.y + 15 * Math.sin(ball.twirlAngle);
+
+    return [x, y];
 }
