@@ -100,6 +100,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.getElementById('ball-larger').addEventListener('click', increaseSize);
     document.getElementById('twirly').addEventListener('click', toggleTwirl);
 
+    document.getElementById('hide-paths-button').addEventListener('click', togglePaths);
+    document.getElementById('launch-button').addEventListener('click', launch);
+
     // make pallete-1 the active palette
     document.getElementById('palette-7').click();
 
@@ -114,32 +117,11 @@ function checkKey(e) {
 
     switch (e.code) {
         case 'Space':
-            let path = paths.get(activePath);
-            let ball = new Ball(path.ballSize, ballColor);
-
-            // Don't add the ball to the path if it would 
-            // occupy the same node as another equal ball.
-            // You can only see one ball at each node.
-            let found = false;
-
-            for (let i = 0; i < path.balls.length; i++) {
-                if (path.balls[i].pathNodeIndex === 0) {
-                    found = true;
-
-                    if (!path.balls[i].equals(ball)) {
-                        path.balls[i] = ball;
-                    }
-                }
-            }
-
-            if (!found) {
-                path.balls.push(ball);
-            }
-
+            launch();
             break;
 
         case 'KeyH':
-            showPath = !showPath;
+            togglePaths();
             break;
 
         case 'KeyL':
@@ -227,6 +209,34 @@ function checkKey(e) {
     }
 
     return false;
+}
+
+function togglePaths() {
+    showPath = !showPath;h
+}
+
+function launch() {
+    let path = paths.get(activePath);
+    let ball = new Ball(path.ballSize, ballColor);
+
+    // Don't add the ball to the path if it would 
+    // occupy the same node as another equal ball.
+    // You can only see one ball at each node.
+    let found = false;
+
+    for (let i = 0; i < path.balls.length; i++) {
+        if (path.balls[i].pathNodeIndex === 0) {
+            found = true;
+
+            if (!path.balls[i].equals(ball)) {
+                path.balls[i] = ball;
+            }
+        }
+    }
+
+    if (!found) {
+        path.balls.push(ball);
+    }
 }
 
 function toggleTwirl() {
