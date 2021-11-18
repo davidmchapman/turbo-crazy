@@ -212,7 +212,15 @@ function checkKey(e) {
 }
 
 function togglePaths() {
-    showPath = !showPath;h
+    showPath = !showPath;
+
+    let button = document.getElementById('hide-paths-button');
+
+    if (showPath) {
+        button.textContent = 'Hide Paths';
+    } else {
+        button.textContent = 'Show Paths';
+    }
 }
 
 function launch() {
