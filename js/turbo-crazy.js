@@ -429,6 +429,10 @@ function gameLoop(timestamp) {
     fps = Math.round(1 / secondsPassed);
 
     draw();
+    window.requestAnimationFrame(skipFrame);
+}
+
+function skipFrame()  {
     window.requestAnimationFrame(gameLoop);
 }
 
