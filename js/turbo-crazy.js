@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     let clientWidth = document.body.clientWidth;
 
-    if (clientWidth < 700) {
+    if (clientWidth < 400) {
         alert('Please make your browser window wider and reload the page.');
         return;
     }

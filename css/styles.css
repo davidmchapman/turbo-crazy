@@ -5,7 +5,7 @@ body {
 }
 
 .slidecontainer {
-    width: 1000px; /* width of the outside container */
+    width: 400px; /* width of the outside container */
     margin-top: 10px;
 }
 
@@ -20,7 +20,7 @@ body {
     -webkit-transition: .2s;
     transition: opacity .2s;
 }
-  
+
 .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
