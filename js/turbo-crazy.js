@@ -1,5 +1,5 @@
 import { Ball } from './ball.js?v=1.5';
-import { Path } from './path.js?v=1.5';
+import { Path } from './path.js?v=1.6';
 import { PathNode } from './path-node.js?v=1.1';
 import { Vector } from './vector.js?v=1.1';
 import { Spark } from './spark.js';

@@ -9,7 +9,7 @@ export class Path {
 
     adjustSize(adjustment) {
         if ((adjustment < 0 && this.ballSize > 1) ||
-            (adjustment > 0 && this.ballSize < 20)) {
+            (adjustment > 0 && this.ballSize < 30)) {
             this.ballSize += adjustment;
         }
     }
