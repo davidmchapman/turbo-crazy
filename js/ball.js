@@ -10,7 +10,7 @@ export class Ball {
         this.rgbColor = rgbColor;
     }
 
-    equals (ball) {
+    equals(ball) {
         if (this.size !== ball.size) {
             return false;
         }

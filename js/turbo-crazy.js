@@ -1,7 +1,8 @@
-import { Ball } from './ball.js?v=1.4';
-import { Path } from './path.js?v=1.4';
+import { Ball } from './ball.js?v=1.5';
+import { Path } from './path.js?v=1.5';
 import { PathNode } from './path-node.js?v=1.1';
 import { Vector } from './vector.js?v=1.1';
+import { Spark } from './spark.js';
 
 let c;
 let ctx;
@@ -13,8 +14,10 @@ let oldTimestamp;
 let fps;
 
 let bgValue;
+let antiBgValue;
 
 let paths = new Map();
+let sparks = [];
 
 let ballColor = '#000000';
 let showPath = true;
@@ -45,6 +48,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     c.addEventListener('click', canvasClicked, false);
     bgSlider.addEventListener('input', bgSliderInput, false);
     bgValue = bgSlider.value;
+    calculateAntiBgValue();
 
     window.addEventListener('keydown', (e) => {  
         if (e.keyCode === 32 && e.target === document.body) {  
@@ -103,8 +107,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.getElementById('hide-paths-button').addEventListener('click', togglePaths);
     document.getElementById('launch-button').addEventListener('click', launch);
 
-    // make pallete-1 the active palette
-    document.getElementById('palette-7').click();
+    // make one of the color palettes active
+    document.getElementById('palette-12').click();
 
     // make path-1 the active path
     document.getElementById('path-1').click();
@@ -127,6 +131,9 @@ function checkKey(e) {
         case 'KeyL':
             adjustSize(1);
             break;
+
+        case 'KeyQ':
+            toggleSparks();
 
         case 'KeyR':
             undoRemoveNode();
@@ -250,6 +257,11 @@ function launch() {
 function toggleTwirl() {
     let path = paths.get(activePath);
     path.isTwirling = !path.isTwirling;
+}
+
+function toggleSparks() {
+    let path = paths.get(activePath);
+    path.isSparking = !path.isSparking;
 }
 
 function reduceSize() {
@@ -436,6 +448,9 @@ function canvasClicked(e) {
 
 function bgSliderInput(e) {
     bgValue = e.target.value;
+    calculateAntiBgValue();
+
+    console.log(bgValue + '   ' + antiBgValue);
 }
 
 function gameLoop(timestamp) {
@@ -523,6 +538,15 @@ function draw() {
     drawBackground();
     drawFps();
     drawPaths();
+    drawSparks();
+}
+
+function calculateAntiBgValue() {
+    if (bgValue >= 128) {
+        antiBgValue = 0;
+    } else {
+        antiBgValue = 255;
+    }
 }
 
 function drawBackground() {
@@ -537,17 +561,16 @@ function drawFps() {
 
 function drawPaths() {
     for (const [pathNumber, path] of paths) {
-        drawPathNodes(pathNumber, path);
+        if (showPath) {
+            drawPathNodes(pathNumber, path);
+        }
+        
         drawPathBalls(path);
     }
 }
 
 function drawPathNodes(pathNumber, path) {
-    let nodeColor = Math.abs(bgValue - 255);
-    
-    if (!showPath) {
-        nodeColor = bgValue;
-    }
+    let nodeColor = antiBgValue;
     
     ctx.fillStyle = "rgb(" + nodeColor + ", " + nodeColor + ", " + nodeColor + ")";
 
@@ -610,7 +633,37 @@ function drawPathBalls(path) {
         ctx.arc(offsetX, offsetY, b.size, 0, 2 * Math.PI);
         ctx.fillStyle = b.rgbColor;
         ctx.fill();
+
+        if (path.isSparking && Math.random() < 0.05) {
+            sparks.push(...Spark.generate(offsetX, offsetY, 14, 10, b.rgbColor, 0.1, 10));
+        }
     });
+}
+
+function drawSparks() {
+    let sparksToRemove = [];
+
+    sparks.forEach((s, i) => {
+        if (s.opacity > 0) {
+            const [point1, point2] = s.getEndpoints();
+
+            ctx.globalAlpha = s.opacity;
+            ctx.strokeStyle = s.rgbColor;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(point1.x, point1.y);
+            ctx.lineTo(point2.x, point2.y);
+            ctx.stroke();
+        } else {
+            sparksToRemove.push(i);
+        }
+    });
+
+    for (let i = sparksToRemove.length - 1; i >= 0; i--) {
+        sparks.splice(i, 1);
+    }
+
+    ctx.globalAlpha = 1;
 }
 
 function twirlingOffset(path, node, ball) {

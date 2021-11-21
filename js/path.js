@@ -2,9 +2,10 @@ export class Path {
     nodes = [];
     balls = [];
     redo = [];
-    speed = 1;
-    ballSize = 4;
+    speed = 2;
+    ballSize = 6;
     isTwirling = false;
+    isSparking= false;
 
     adjustSize(adjustment) {
         if ((adjustment < 0 && this.ballSize > 1) ||
