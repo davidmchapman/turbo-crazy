@@ -139,6 +139,41 @@ body {
     width: 14px;
 }
 
+#tools #controls-container {
+    position: absolute;
+    top: 300px;
+    padding-left: 4px;
+}
+
+#tools #controls-container #controls-headers {
+    cursor: pointer;
+}
+
+#tools #controls-container #controls-headers #ball-controls-header {
+    display: inline-block;
+    border-bottom: 3px solid aquamarine;
+    width: 30px;
+    margin-left: 3px;
+    margin-right: 5px;
+    text-align: center;
+}
+
+#tools #controls-container #controls-headers #path-controls-header {
+    display: inline-block;
+    text-align: center;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+#tools #controls-container #ball-controls {
+    margin-top: 10px;
+}
+
+#tools #controls-container #path-controls {
+    display: none;
+    margin-top: 10px;
+}
+
 #tools #hide-paths {
     position: absolute;
     width: 100%;
@@ -169,28 +204,6 @@ body {
     height: 50px;
 }
 
-#tools .slide-in {
-    animation: slide-in 0.5s forwards;
-}
-
-#tools .slide-out {
-    animation: slide-out 0.5s forwards;
-}
-
-@keyframes slide-in {
-    0% { opacity: 1; }
-    100% { opacity: 0; }
-    /*100% { transform: translateX(0%); }*/
-}
-
-@keyframes slide-out {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
-
-    /*0% { transform: translateX(0%); }
-    100% { transform: translateX(-100%); }*/
-}
-
 #tools .path:hover:not(.selected-path) {
     background-color: #d3d3d3;
     color: black;
@@ -211,25 +224,9 @@ body {
     padding-left: 0px;
 }
 
-#path-editor {
-    position: absolute;
-    width: 120px;
-    height: 692px;
-    top: 0px;
-    left: 91px;
-    color: black;
-    background-color: white;
-    border: 1px solid #000000;
-    padding: 4px;
-    opacity: 0.9;
-    display: none;
-    /*transform: translateX(-100%);*/
-    z-index: 2;
-}
-
 .path-editor-heading {
     font-weight: bold;
-    color: red;
+    color: aquamarine;
     margin-top: 2px;
     margin-bottom: 6px;
     text-align: center;
@@ -239,23 +236,7 @@ body {
     margin-bottom: 8px;
 }
 
-#path-editor #undo {
-    float: left;
-    cursor: pointer;
-    margin-left: 4px;
-}
-
-#path-editor #redo {
-    float: right;
-    cursor: pointer;
-    margin-right: 4px;
-}
-
-#path-editor .ball-prop {
-    margin-top: 8px;
-}
-
-#path-editor .editor-option {
+.editor-option {
     cursor: pointer;
 }
 

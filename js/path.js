@@ -5,7 +5,8 @@ export class Path {
     speed = 2;
     ballSize = 6;
     isTwirling = false;
-    isSparking= false;
+    isSparking = false;
+    isHidey = false;
 
     adjustSize(adjustment) {
         if ((adjustment < 0 && this.ballSize > 1) ||

@@ -1,5 +1,5 @@
 import { Ball } from './ball.js?v=1.5';
-import { Path } from './path.js?v=1.6';
+import { Path } from './path.js?v=1.7';
 import { PathNode } from './path-node.js?v=1.1';
 import { Vector } from './vector.js?v=1.1';
 import { Spark } from './spark.js';
@@ -98,14 +98,19 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     }
 
-    document.getElementById('ball-slower').addEventListener('click', reduceSpeed);
-    document.getElementById('ball-faster').addEventListener('click', increaseSpeed);
-    document.getElementById('ball-smaller').addEventListener('click', reduceSize);
-    document.getElementById('ball-larger').addEventListener('click', increaseSize);
+    document.getElementById('ball-slower-button').addEventListener('click', reduceSpeed);
+    document.getElementById('ball-faster-button').addEventListener('click', increaseSpeed);
+    document.getElementById('ball-smaller-button').addEventListener('click', reduceSize);
+    document.getElementById('ball-larger-button').addEventListener('click', increaseSize);
     document.getElementById('twirly').addEventListener('click', toggleTwirl);
+    document.getElementById('sparky').addEventListener('click', toggleSparks);
+    document.getElementById('hidey').addEventListener('click', toggleHidey);
 
     document.getElementById('hide-paths-button').addEventListener('click', togglePaths);
     document.getElementById('launch-button').addEventListener('click', launch);
+
+    document.getElementById('ball-controls-header').addEventListener('click', showBallControls);
+    document.getElementById('path-controls-header').addEventListener('click', showPathControls);
 
     // make one of the color palettes active
     document.getElementById('palette-12').click();
@@ -124,8 +129,19 @@ function checkKey(e) {
             launch();
             break;
 
+        case 'Escape':
+            if (confirm('Are you sure you want to clear the drawing?')) {
+                location.reload();
+            }
+
+            break;
+
         case 'KeyH':
             togglePaths();
+            break;
+
+        case 'KeyI':
+            toggleHidey();
             break;
 
         case 'KeyL':
@@ -218,6 +234,33 @@ function checkKey(e) {
     return false;
 }
 
+function showBallControls() {
+    showControls('ball');
+}
+
+function showPathControls() {
+    showControls('path');
+}
+
+function showControls(controlsFor) {
+    let ballControls = document.getElementById('ball-controls');
+    let pathControls = document.getElementById('path-controls');
+    let ballControlsHeader = document.getElementById('ball-controls-header');
+    let pathControlsHeader = document.getElementById('path-controls-header');
+
+    if (controlsFor === 'ball') {
+        ballControls.style.display = 'block';
+        pathControls.style.display = 'none';
+        ballControlsHeader.style.borderBottom = '3px solid aquamarine';
+        pathControlsHeader.style.borderBottom = 'none';
+    } else {
+        ballControls.style.display = 'none';
+        pathControls.style.display = 'block';
+        ballControlsHeader.style.borderBottom = 'none';
+        pathControlsHeader.style.borderBottom = '3px solid aquamarine';
+    }
+}
+
 function togglePaths() {
     showPath = !showPath;
 
@@ -262,6 +305,11 @@ function toggleTwirl() {
 function toggleSparks() {
     let path = paths.get(activePath);
     path.isSparking = !path.isSparking;
+}
+
+function toggleHidey() {
+    let path = paths.get(activePath);
+    path.isHidey = !path.isHidey;
 }
 
 function reduceSize() {
@@ -629,10 +677,12 @@ function drawPathBalls(path) {
 
         let [offsetX, offsetY] = twirlingOffset(path, node, b);
 
-        ctx.beginPath();
-        ctx.arc(offsetX, offsetY, b.size, 0, 2 * Math.PI);
-        ctx.fillStyle = b.rgbColor;
-        ctx.fill();
+        if (!path.isHidey) {
+            ctx.beginPath();
+            ctx.arc(offsetX, offsetY, b.size, 0, 2 * Math.PI);
+            ctx.fillStyle = b.rgbColor;
+            ctx.fill();
+        }
 
         if (path.isSparking && Math.random() < 0.05) {
             sparks.push(...Spark.generate(offsetX, offsetY, 14, 10, b.rgbColor, 0.1, 10));

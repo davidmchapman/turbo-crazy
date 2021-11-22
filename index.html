@@ -9,9 +9,9 @@
   <title>Turbo-Crazy Drawing App</title>
   <meta name="description" content="Turbo-Crazy Drawing App">
 
-  <link rel="stylesheet" href="css/styles.min.css?v=1.5">
+  <link rel="stylesheet" href="css/styles.min.css?v=1.6">
 
-  <script type="module" src="js/turbo-crazy.min.js?v=1.13"></script>
+  <script type="module" src="js/turbo-crazy.min.js?v=1.14"></script>
 </head>
 
 <body>
@@ -52,69 +52,75 @@
       </div>
       <div id="path-1" class="path selected-path">
         <span class="path-name">Path 1</span>
-        <span class="path-toggle">&gt;</span>
       </div>
       <div id="path-2" class="path">
         <span class="path-name">Path 2</span>
-        <span class="path-toggle">&gt;</span>
       </div>
       <div id="path-3" class="path">
         <span class="path-name">Path 3</span>
-        <span class="path-toggle">&gt;</span>
       </div>
       <div id="path-4" class="path">
         <span class="path-name">Path 4</span>
-        <span class="path-toggle">&gt;</span>
       </div>
       <div id="path-5" class="path">
         <span class="path-name">Path 5</span>
-        <span class="path-toggle">&gt;</span>
       </div>
       <div id="path-6" class="path">
         <span class="path-name">Path 6</span>
-        <span class="path-toggle">&gt;</span>
       </div>
       <div id="path-7" class="path">
         <span class="path-name">Path 7</span>
-        <span class="path-toggle">&gt;</span>
       </div>
       <div id="path-8" class="path">
         <span class="path-name">Path 8</span>
-        <span class="path-toggle">&gt;</span>
       </div>
       <div id="path-9" class="path">
         <span class="path-name">Path 9</span>
-        <span class="path-toggle">&gt;</span>
       </div>
       <div id="path-10" class="path">
         <span class="path-name">Path 10</span>
-        <span class="path-toggle">&gt;</span>
+      </div>
+      <div id="controls-container">
+        <div id ="controls-headers">
+          <div id="ball-controls-header">ball</div>
+          <div id="path-controls-header">path</div>
+        </div>
+        <div id="ball-controls">
+          <p class="path-editor-heading">speed</p>
+          <div style="text-align: center;">
+            <button id="ball-slower-button">-</button>&nbsp;&nbsp;<button id="ball-faster-button">+</button>
+          </div>
+          <div class="path-editor-heading-spacer">&nbsp;</div>
+          <p class="path-editor-heading">size</p>
+          <div style="text-align: center;">
+            <button id="ball-smaller-button">-</button>&nbsp;&nbsp;<button id="ball-larger-button">+</button>
+          </div>
+          <div class="path-editor-heading-spacer">&nbsp;</div>
+          <p class="path-editor-heading">effects</p>
+          <div style="text-align: center;">
+            <span id="twirly" class="editor-option">twirly</span>
+          </div>
+          <div style="text-align: center;">
+            <span id="sparky" class="editor-option">sparky</span>
+          </div>
+          <div style="text-align: center;">
+            <span id="hidey" class="editor-option">hidey</span>
+          </div>
+        </div>
+        <div id="path-controls">
+          <div style="text-align: center;">
+            <span id="undo" class="editor-option">undo</span>
+          </div>
+          <div style="text-align: center;">
+            <span id="redo" class="editor-option">redo</span>
+          </div>
+        </div>
       </div>
       <div id="hide-paths">
         <button id="hide-paths-button">Hide Paths</button>
       </div>
       <div id="launch">
         <button id="launch-button">Launch!</button>
-      </div>
-    </div>
-    <div id="path-editor" style="display: none;">
-      <p class="path-editor-heading">path building</p>
-      <div class="clearfix">
-        <span id="undo" class="editor-option">undo</span>
-        <span id="redo" class="editor-option">redo</span>
-      </div>
-      <div class="path-editor-heading-spacer">&nbsp;</div>
-      <p class="path-editor-heading">ball properties</p>
-      <div style="text-align: center;">
-        <span id="ball-slower" class="editor-option">&nbsp;&lt;&lt;&lt;&nbsp;</span>&nbsp;speed&nbsp;<span id="ball-faster" class="editor-option">&nbsp;&gt;&gt;&gt;&nbsp;</span>
-      </div>
-      <div class="ball-prop" style="text-align: center;">
-        <span id="ball-smaller" class="editor-option">&nbsp;&lt;&lt;&lt;&nbsp;</span>&nbsp;size&nbsp;<span id="ball-larger" class="editor-option">&nbsp;&gt;&gt;&gt;&nbsp;</span>
-      </div>
-      <div class="path-editor-heading-spacer">&nbsp;</div>
-      <p class="path-editor-heading">ball effects</p>
-      <div style="text-align: center;">
-        <span id="twirly" class="editor-option">twirly</span>
       </div>
     </div>
   </div>
