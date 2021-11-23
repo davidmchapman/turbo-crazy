@@ -1,5 +1,5 @@
 import { Ball } from './ball.js?v=1.5';
-import { Path } from './path.js?v=1.7';
+import { Path } from './path.js?v=1.8';
 import { PathNode } from './path-node.js?v=1.1';
 import { Vector } from './vector.js?v=1.1';
 import { Spark } from './spark.js';
@@ -23,7 +23,7 @@ let ballColor = '#000000';
 let showPath = true;
 
 let activePalette = -1;
-let activePath = -1;
+let activePath = null;
 
 document.addEventListener('DOMContentLoaded', (event) => {
 
@@ -58,7 +58,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     let pathDivs = document.getElementsByClassName('path');
 
-    for (let div of pathDivs) {
+    for (let i = 0; i < pathDivs.length; i++) {
+        let div = pathDivs[i];
         div.addEventListener('click', switchActivePath);
     }
 
@@ -68,13 +69,15 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     let palettes = document.getElementsByClassName('palette');
 
-    for (let palette of palettes) {
+    for (let i = 0; i < palettes.length; i++) {
+        let palette = palettes[i];
         palette.addEventListener('click', switchPalette);
     }
 
     let swatches = document.getElementsByClassName('swatch');
 
-    for (let swatch of swatches) {
+    for (let i = 0; i < swatches.length; i++) {
+        let swatch = swatches[i];
         swatch.addEventListener('click', switchColor);
     }
 
@@ -83,28 +86,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
         paths.set(pathNumber, new Path())
     }
 
-    let pathEditor = document.getElementById('path-editor');
-    let pathToggles = document.getElementsByClassName('path-toggle');
-    
-    for (let pathToggle of pathToggles) {
-        pathToggle.addEventListener('click', function() {
-            if (pathEditor.style.display === 'none') {
-                pathEditor.style.display = 'block';
-                pathToggle.innerHTML = '<';
-            } else {
-                pathEditor.style.display = 'none';
-                pathToggle.innerHTML = '>';
-            }
-        });
-    }
-
     document.getElementById('ball-slower-button').addEventListener('click', reduceSpeed);
     document.getElementById('ball-faster-button').addEventListener('click', increaseSpeed);
     document.getElementById('ball-smaller-button').addEventListener('click', reduceSize);
     document.getElementById('ball-larger-button').addEventListener('click', increaseSize);
-    document.getElementById('twirly').addEventListener('click', toggleTwirl);
-    document.getElementById('sparky').addEventListener('click', toggleSparks);
-    document.getElementById('hidey').addEventListener('click', toggleHidey);
+    document.getElementById('twirl').addEventListener('click', toggleTwirl);
+    document.getElementById('spark').addEventListener('click', toggleSpark);
+    document.getElementById('hide').addEventListener('click', toggleHide);
+    document.getElementById('connect').addEventListener('click', toggleConnect);
 
     document.getElementById('hide-paths-button').addEventListener('click', togglePaths);
     document.getElementById('launch-button').addEventListener('click', launch);
@@ -136,12 +125,16 @@ function checkKey(e) {
 
             break;
 
+        case 'KeyC':
+            toggleConnect();
+            break;
+
         case 'KeyH':
             togglePaths();
             break;
 
         case 'KeyI':
-            toggleHidey();
+            toggleHide();
             break;
 
         case 'KeyL':
@@ -149,7 +142,7 @@ function checkKey(e) {
             break;
 
         case 'KeyQ':
-            toggleSparks();
+            toggleSpark();
 
         case 'KeyR':
             undoRemoveNode();
@@ -274,42 +267,42 @@ function togglePaths() {
 }
 
 function launch() {
-    let path = paths.get(activePath);
-    let ball = new Ball(path.ballSize, ballColor);
+    let ball = new Ball(activePath.ballSize, ballColor);
 
     // Don't add the ball to the path if it would 
     // occupy the same node as another equal ball.
     // You can only see one ball at each node.
     let found = false;
 
-    for (let i = 0; i < path.balls.length; i++) {
-        if (path.balls[i].pathNodeIndex === 0) {
+    for (let i = 0; i < activePath.balls.length; i++) {
+        if (activePath.balls[i].pathNodeIndex === 0) {
             found = true;
 
-            if (!path.balls[i].equals(ball)) {
-                path.balls[i] = ball;
+            if (!activePath.balls[i].equals(ball)) {
+                activePath.balls[i] = ball;
             }
         }
     }
 
     if (!found) {
-        path.balls.push(ball);
+        activePath.balls.push(ball);
     }
 }
 
 function toggleTwirl() {
-    let path = paths.get(activePath);
-    path.isTwirling = !path.isTwirling;
+    activePath.isTwirling = !activePath.isTwirling;
 }
 
-function toggleSparks() {
-    let path = paths.get(activePath);
-    path.isSparking = !path.isSparking;
+function toggleSpark() {
+    activePath.isSparking = !activePath.isSparking;
 }
 
-function toggleHidey() {
-    let path = paths.get(activePath);
-    path.isHidey = !path.isHidey;
+function toggleHide() {
+    activePath.isHiding = !activePath.isHiding;
+}
+
+function toggleConnect() {
+    activePath.Connecting = !activePath.isConnecting;
 }
 
 function reduceSize() {
@@ -322,8 +315,7 @@ function increaseSize() {
 
 function adjustSize(adjustment) {
     window.getSelection().removeAllRanges();
-    let path = paths.get(activePath);
-    path.adjustSize(adjustment);
+    activePath.adjustSize(adjustment);
 }
 
 function reduceSpeed() {
@@ -336,8 +328,7 @@ function increaseSpeed() {
 
 function adjustSpeed(adjustment) {
     window.getSelection().removeAllRanges();
-    let path = paths.get(activePath);
-    path.adjustSpeed(adjustment);
+    activePath.adjustSpeed(adjustment);
 }
 
 function switchPalette(e) {
@@ -438,7 +429,8 @@ function switchColor(e) {
 
     let swatches = document.getElementsByClassName('swatch');
 
-    for (let swatch of swatches) {
+    for (let i = 0; i < swatches.length; i++) {
+        let swatch = swatches[i];
         swatch.style.borderColor = 'transparent';
     }
 
@@ -452,46 +444,31 @@ function switchActivePath(e) {
     let pathNumber = parseInt(e.currentTarget.id.split('-')[1]);
     let clickedElement = e.target;
 
-    if (activePath === pathNumber) {
+    let path = paths.get(pathNumber);
+
+    if (activePath === path) {
         return;
     }
     
-    activePath = pathNumber;
+    activePath = path;
 
     let pathDivs = document.getElementsByClassName('path');
 
-    for (let div of pathDivs) {
+    for (let i = 0; i < pathDivs.length; i++) {
+        let div = pathDivs[i];
         div.classList.remove('selected-path');
     }
 
-    let pathToggleSpans = document.getElementsByClassName('path-toggle');
-
-    for (let span of pathToggleSpans) {
-        span.style.display = 'none';
-    }
-
-    let parentPathDiv = document.getElementById('path-' + activePath);
+    let parentPathDiv = document.getElementById('path-' + pathNumber);
     parentPathDiv.classList.add('selected-path');
-
-    let pathEditor = document.getElementById('path-editor');
-    let toggleSpan = parentPathDiv.querySelector('.path-toggle');
-    toggleSpan.style.display = 'inline-block';
-
-    if (pathEditor.style.display === 'none') {
-        toggleSpan.innerHTML = '>';
-    } else {
-        toggleSpan.innerHTML = '<';
-    }
 }
 
 function canvasClicked(e) {
     let x = e.clientX + window.scrollX - Math.round(cRect.x) - 1;
     let y = e.clientY + window.scrollY - Math.round(cRect.y) - 3;
 
-    let path = paths.get(activePath);
-    
-    path.redo = [];
-    addToNodes(path, x, y);
+    activePath.redo = [];
+    addToNodes(activePath, x, y);
 }
 
 function bgSliderInput(e) {
@@ -546,38 +523,35 @@ function addToNodes(path, x, y) {
 
 function removeNode() {
 
-    let path = paths.get(activePath);
-
-    let lastNode = path.nodes.pop();
+    let lastNode = activePath.nodes.pop();
 
     if (lastNode === undefined) {
         return;
     }
 
-    path.redo.push(lastNode);
+    activePath.redo.push(lastNode);
 
     // also need to remove all the other
     // node up to the now-last anchor node
-    if (path.nodes.length > 0) {
-        while (!path.nodes.at(-1).isAnchor) {
-            path.nodes.pop();
+    if (activePath.nodes.length > 0) {
+        while (!activePath.nodes.at(-1).isAnchor) {
+            activePath.nodes.pop();
         }
     }
 
-    for (let i = path.balls.length - 1; i >= 0; i--) {
-        if (path.balls[i].pathNodeIndex > path.nodes.length) {
-            path.balls.splice(i, 1);
+    for (let i = activePath.balls.length - 1; i >= 0; i--) {
+        if (activePath.balls[i].pathNodeIndex > activePath.nodes.length) {
+            activePath.balls.splice(i, 1);
         }
     }
 }
 
 function undoRemoveNode() {
 
-    let path = paths.get(activePath);
-    let node = path.redo.pop();
+    let node = activePath.redo.pop();
 
     if (node !== undefined) {
-        addToNodes(path, node.x, node.y);
+        addToNodes(activePath, node.x, node.y);
     }
 }
 
@@ -598,7 +572,7 @@ function calculateAntiBgValue() {
 }
 
 function drawBackground() {
-    ctx.fillStyle = "rgb(" + bgValue + ", " + bgValue + ", " + bgValue + ")";
+    ctx.fillStyle = makeRgbString(bgValue);
     ctx.fillRect(0, 0, c.width, c.height);
 }
 
@@ -620,19 +594,21 @@ function drawPaths() {
 function drawPathNodes(pathNumber, path) {
     let nodeColor = antiBgValue;
     
-    ctx.fillStyle = "rgb(" + nodeColor + ", " + nodeColor + ", " + nodeColor + ")";
+    ctx.fillStyle = makeRgbString(nodeColor);
 
     let maxNodeIndex = path.nodes.length - 1;
 
-    path.nodes.forEach((n, i) => {
-        if (!n.isAnchor || pathNumber !== activePath) {
+    for (let i = 0; i <= maxNodeIndex; i++) {
+        let n = path.nodes[i];
+
+        if (!n.isAnchor || path !== activePath) {
             ctx.fillRect(n.x, n.y, 1, 1);
-            return;
+            continue;
         }
         
         let radius = 1;
 
-        if (pathNumber === activePath) {
+        if (path === activePath) {
             radius = 4;
         }
 
@@ -645,17 +621,17 @@ function drawPathNodes(pathNumber, path) {
             ctx.arc(n.x, n.y, radius + 2, 0, 2 * Math.PI);
             ctx.fill();
 
-            ctx.fillStyle = "rgb(" + bgValue + ", " + bgValue + ", " + bgValue + ")";
+            ctx.fillStyle = makeRgbString(bgValue);
             ctx.beginPath();
             ctx.arc(n.x, n.y, radius, 0, 2 * Math.PI);
             ctx.fill();
 
-            ctx.fillStyle = "rgb(" + nodeColor + ", " + nodeColor + ", " + nodeColor + ")";
+            ctx.fillStyle = makeRgbString(nodeColor);
             ctx.beginPath();
             ctx.arc(n.x, n.y, radius - 2, 0, 2 * Math.PI);
             ctx.fill();
         }
-    });
+    }
 }
 
 function drawPathBalls(path) {
@@ -665,7 +641,9 @@ function drawPathBalls(path) {
         return;
     }
 
-    path.balls.forEach(b => {
+    for (let i = 0; i < path.balls.length; i++) {
+        let b = path.balls[i];
+    
         let newIndex = (b.pathNodeIndex + path.speed) % path.nodes.length;
         
         if (newIndex < 0) {
@@ -677,7 +655,7 @@ function drawPathBalls(path) {
 
         let [offsetX, offsetY] = twirlingOffset(path, node, b);
 
-        if (!path.isHidey) {
+        if (!path.isHiding) {
             ctx.beginPath();
             ctx.arc(offsetX, offsetY, b.size, 0, 2 * Math.PI);
             ctx.fillStyle = b.rgbColor;
@@ -687,13 +665,15 @@ function drawPathBalls(path) {
         if (path.isSparking && Math.random() < 0.05) {
             sparks.push(...Spark.generate(offsetX, offsetY, 14, 10, b.rgbColor, 0.1, 10));
         }
-    });
+    }
 }
 
 function drawSparks() {
     let sparksToRemove = [];
 
-    sparks.forEach((s, i) => {
+    for (let i = 0; i < sparks.length; i++) {
+        let s = sparks[i];
+
         if (s.opacity > 0) {
             const [point1, point2] = s.getEndpoints();
 
@@ -707,7 +687,7 @@ function drawSparks() {
         } else {
             sparksToRemove.push(i);
         }
-    });
+    }
 
     for (let i = sparksToRemove.length - 1; i >= 0; i--) {
         sparks.splice(i, 1);
@@ -729,4 +709,8 @@ function twirlingOffset(path, node, ball) {
     let y = node.y + 15 * Math.sin(ball.twirlAngle);
 
     return [x, y];
+}
+
+function makeRgbString(value) {
+    return 'rgb(' + value + ', ' + value + ', ' + value + ')';
 }
