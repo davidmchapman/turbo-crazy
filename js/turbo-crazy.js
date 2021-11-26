@@ -45,8 +45,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     bgSlider = document.getElementById("bg-slider");
 
     window.addEventListener('keyup', checkKey);
-    c.addEventListener('click', canvasClicked);
-    c.addEventListener('touchend',canvasClicked);
+    c.addEventListener('click', canvasClicked, false);
+    c.addEventListener('touchend',canvasClicked, false);
     bgSlider.addEventListener('input', bgSliderInput, false);
     bgValue = bgSlider.value;
     calculateAntiBgValue();
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.getElementById('twirl').addEventListener('click', toggleTwirl);
     document.getElementById('spark').addEventListener('click', toggleSpark);
     document.getElementById('hide').addEventListener('click', toggleHide);
-    document.getElementById('connect').addEventListener('click', toggleConnect);
+    // document.getElementById('connect').addEventListener('click', toggleConnect);
 
     document.getElementById('hide-paths-button').addEventListener('click', togglePaths);
     document.getElementById('launch-button').addEventListener('click', launch);
