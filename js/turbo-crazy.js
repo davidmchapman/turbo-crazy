@@ -45,13 +45,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
     bgSlider = document.getElementById("bg-slider");
 
     window.addEventListener('keyup', checkKey);
-    c.addEventListener('click', canvasClicked, false);
+    c.addEventListener('click', canvasClicked);
+    c.addEventListener('touchend',canvasClicked);
     bgSlider.addEventListener('input', bgSliderInput, false);
     bgValue = bgSlider.value;
     calculateAntiBgValue();
 
     window.addEventListener('keydown', (e) => {  
-        if (e.keyCode === 32 && e.target === document.body) {  
+        if (e.code === 'Enter' && e.target === document.body) {  
           e.preventDefault();  
         }  
       });
