@@ -1,0 +1,137 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Turbo-Crazy Drawing App</title>
+  <meta name="description" content="Turbo-Crazy Drawing App">
+
+  <link rel="stylesheet" href="css/styles.min.css?v=1.6">
+
+  <script type="module" src="js/turbo-crazy.min.js?v=1.17"></script>
+</head>
+
+<body>
+
+  <div id="container">
+    <canvas id="canvas" height="700px"></canvas>
+    <div id="palette-container">
+      <img id="palette-7" class="palette" src="img/palettes/p7.png" width="100px" height="16px">
+      <img id="palette-11" class="palette" src="img/palettes/p11.png" width="100px" height="16px">
+      <img id="palette-8" class="palette" src="img/palettes/p8.png" width="100px" height="16px">
+      <img id="palette-12" class="palette" src="img/palettes/p12.png" width="100px" height="16px">
+      <img id="palette-1" class="palette" src="img/palettes/p1.png" width="100px" height="16px">
+      <img id="palette-13" class="palette" src="img/palettes/p13.png" width="100px" height="16px">
+      <img id="palette-9" class="palette" src="img/palettes/p9.png" width="100px" height="16px">
+      <img id="palette-5" class="palette" src="img/palettes/p5.png" width="100px" height="16px">
+      <img id="palette-2" class="palette" src="img/palettes/p2.png" width="100px" height="16px">
+      <img id="palette-3" class="palette" src="img/palettes/p3.png" width="100px" height="16px">
+      <img id="palette-10" class="palette" src="img/palettes/p10.png" width="100px" height="16px">
+      <img id="palette-6" class="palette" src="img/palettes/p6.png" width="100px" height="16px">
+      <img id="palette-4" class="palette" src="img/palettes/p4.png" width="100px" height="16px">
+    </div>
+    <div id="swatch-container">
+      <span id="swatch-1" class="swatch"></span>
+      <span id="swatch-2" class="swatch"></span>
+      <span id="swatch-3" class="swatch"></span>
+      <span id="swatch-4" class="swatch"></span>
+      <span id="swatch-5" class="swatch"></span>
+      <span id="swatch-6" class="swatch"></span>
+      <span id="swatch-7" class="swatch"></span>
+      <span id="swatch-8" class="swatch"></span>
+      <span id="swatch-9" class="swatch"></span>
+      <span id="swatch-10" class="swatch"></span>
+      <span id="swatch-11" class="swatch"></span>
+      <span id="swatch-12" class="swatch"></span>
+    </div>
+    <div id="tools">
+      <div id="fps">
+      </div>
+      <div id="path-1" class="path selected-path">
+        <span class="path-name">Path 1</span>
+      </div>
+      <div id="path-2" class="path">
+        <span class="path-name">Path 2</span>
+      </div>
+      <div id="path-3" class="path">
+        <span class="path-name">Path 3</span>
+      </div>
+      <div id="path-4" class="path">
+        <span class="path-name">Path 4</span>
+      </div>
+      <div id="path-5" class="path">
+        <span class="path-name">Path 5</span>
+      </div>
+      <div id="path-6" class="path">
+        <span class="path-name">Path 6</span>
+      </div>
+      <div id="path-7" class="path">
+        <span class="path-name">Path 7</span>
+      </div>
+      <div id="path-8" class="path">
+        <span class="path-name">Path 8</span>
+      </div>
+      <div id="path-9" class="path">
+        <span class="path-name">Path 9</span>
+      </div>
+      <div id="path-10" class="path">
+        <span class="path-name">Path 10</span>
+      </div>
+      <div id="controls-container">
+        <div id ="controls-headers">
+          <div id="ball-controls-header">ball</div>
+          <div id="path-controls-header">path</div>
+        </div>
+        <div id="ball-controls">
+          <p class="path-editor-heading">speed</p>
+          <div style="text-align: center;">
+            <button id="ball-slower-button">-</button>&nbsp;&nbsp;<button id="ball-faster-button">+</button>
+          </div>
+          <div class="path-editor-heading-spacer">&nbsp;</div>
+          <p class="path-editor-heading">size</p>
+          <div style="text-align: center;">
+            <button id="ball-smaller-button">-</button>&nbsp;&nbsp;<button id="ball-larger-button">+</button>
+          </div>
+          <div class="path-editor-heading-spacer">&nbsp;</div>
+          <p class="path-editor-heading">effects</p>
+          <div style="text-align: center;">
+            <span id="twirl" class="editor-option">twirl</span>
+          </div>
+          <div style="text-align: center;">
+            <span id="spark" class="editor-option">spark</span>
+          </div>
+          <div style="text-align: center;">
+            <span id="hide" class="editor-option">hide</span>
+          </div>
+          <!-- <div style="text-align: center;">
+            <span id="connect" class="editor-option">connect</span>
+          </div> -->
+        </div>
+        <div id="path-controls">
+          <div style="text-align: center;">
+            <span id="undo" class="editor-option">undo</span>
+          </div>
+          <div style="text-align: center;">
+            <span id="redo" class="editor-option">redo</span>
+          </div>
+        </div>
+      </div>
+      <div id="hide-paths">
+        <button id="hide-paths-button">Hide Paths</button>
+      </div>
+      <div id="launch">
+        <button id="launch-button">Launch!</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="slidecontainer">
+    <input type="range" min="0" max="255" value="50" class="slider" id="bg-slider">
+  </div>
+
+</body>
+
+</html>

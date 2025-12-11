@@ -1,137 +1,1391 @@
-<!doctype html>
-
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <title>Multi-Path Balls with Palettes</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      box-sizing: border-box;
+      background: #111;
+      color: #eee;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+    }
 
-  <title>Turbo-Crazy Drawing App</title>
-  <meta name="description" content="Turbo-Crazy Drawing App">
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
 
-  <link rel="stylesheet" href="css/styles.min.css?v=1.6">
+    body {
+      display: flex;
+      flex-direction: column;
+    }
 
-  <script type="module" src="js/turbo-crazy.min.js?v=1.17"></script>
+    /* Top control bar */
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: #222;
+      border-bottom: 1px solid #333;
+      flex: 0 0 auto;
+      flex-wrap: wrap;
+    }
+
+    #controls button {
+      padding: 0.4rem 0.8rem;
+      background: #3a8fff;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    #controls button:hover {
+      background: #2d75d1;
+    }
+
+    #controls button.mode-active {
+      background: #4caf50;
+    }
+
+    #controls button.mode-active:hover {
+      background: #3d8e41;
+    }
+
+    #controls label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    #bgSlider {
+      width: 140px;
+    }
+
+    #hint {
+      margin-left: auto;
+      font-size: 0.8rem;
+      opacity: 0.7;
+      white-space: nowrap;
+    }
+
+    #fpsCounter {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      white-space: nowrap;
+      margin-left: 0.75rem;
+    }
+
+    @media (max-width: 900px) {
+      #hint {
+        flex-basis: 100%;
+        margin-left: 0;
+      }
+    }
+
+    /* Main area: left path panel + canvas + right palette panel */
+    #main {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      overflow-x: auto; /* if window gets tiny, allow horizontal scroll */
+    }
+
+    /* Left path panel: fixed width */
+    #pathPanel {
+      flex: 0 0 220px;
+      width: 220px;
+      min-width: 220px;
+      background: #1a1a1a;
+      border-right: 1px solid #333;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    #pathPanelHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    #addPathBtn {
+      padding: 0.2rem 0.6rem;
+      font-size: 0.85rem;
+      background: #4caf50;
+    }
+
+    #addPathBtn:hover {
+      background: #3d8e41;
+    }
+
+    #pathList {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    .path-item {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.25rem;
+      padding: 0.25rem 0.35rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-bottom: 0.15rem;
+      background: #242424;
+    }
+
+    .path-item.selected {
+      background: #34548a;
+    }
+
+    .path-main {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .path-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.25rem;
+    }
+
+    .path-name {
+      font-weight: 600;
+    }
+
+    .path-meta {
+      font-size: 0.75rem;
+      opacity: 0.8;
+    }
+
+    .delete-path-btn {
+      border: none;
+      background: transparent;
+      color: #ddd;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 0.1rem 0.25rem;
+    }
+
+    .delete-path-btn:hover {
+      color: #ff7676;
+    }
+
+    .path-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.25rem;
+      margin-top: 0.15rem;
+    }
+
+    .close-path-btn {
+      border: none;
+      background: transparent;
+      color: #ccc;
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 0.1rem 0.35rem;
+    }
+
+    .close-path-btn:hover {
+      color: #a0e0ff;
+    }
+
+    .spread-balls-btn {
+      border: none;
+      background: transparent;
+      color: #ccc;
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 0.1rem 0.35rem;
+    }
+
+    .spread-balls-btn:hover {
+      color: #a0ffce;
+    }
+
+    .toggle-visibility-btn {
+      border: none;
+      background: transparent;
+      color: #ccc;
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 0.1rem 0.35rem;
+    }
+
+    .toggle-visibility-btn:hover {
+      color: #ffe08a;
+    }
+
+    /* Canvas area: flexes to fill remaining space */
+    #canvas {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #333; /* overwritten by JS with slider value */
+      cursor: crosshair;
+    }
+
+    /* Canvas area: flexes to fill remaining space */
+    #canvas {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #333; /* overwritten by JS with slider value */
+      cursor: crosshair;
+    }
+
+    /* Palette panel: fixed width */
+    #palettePanel {
+      flex: 0 0 230px;
+      width: 230px;
+      min-width: 230px;
+      background: #1a1a1a;
+      border-left: 1px solid #333;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    #paletteHeader {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    #paletteList {
+      max-height: 320px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    .palette-item {
+      border-radius: 4px;
+      margin-bottom: 0.2rem;
+      border: 1px solid transparent;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .palette-item.selected {
+      border-color: #ffffffaa;
+    }
+
+    .palette-preview {
+      display: flex;
+      height: 16px;
+      width: 100%;
+    }
+
+    .palette-color-block {
+      flex: 1 1 auto;
+    }
+
+    #selectedPaletteHeader {
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-top: 1px solid #333;
+      padding-top: 0.4rem;
+    }
+
+    #colorSwatchList {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    .color-swatch {
+      height: 22px;
+      border-radius: 2px;
+      margin-bottom: 4px;
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+
+    .color-swatch.selected {
+      border-color: #ffffffaa;
+    }
+
+    .no-palettes {
+      font-size: 0.8rem;
+      opacity: 0.6;
+      font-style: italic;
+    }
+
+    #ballSizeContainer {
+      margin-top: 0.4rem;
+      font-size: 0.85rem;
+    }
+
+    #speedContainer {
+      margin-top: 0.4rem;
+      font-size: 0.85rem;
+    }
+
+    #ballSizeContainer label,
+    #speedContainer label {
+      display: grid;
+      grid-template-columns: 70px minmax(0, 1fr) 40px;
+      column-gap: 0.3rem;
+      align-items: center;
+    }
+
+    .slider-label {
+      white-space: nowrap;
+    }
+
+    #ballSizeSlider,
+    #speedSlider {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    #ballSizeValue {
+      min-width: 32px;
+      text-align: right;
+      opacity: 0.8;
+    }
+
+    #speedValue {
+      min-width: 40px;
+      text-align: right;
+      opacity: 0.8;
+    }
+  </style>
 </head>
-
 <body>
+  <div id="controls">
+    <button id="launchBtn">Launch Ball</button>
+    <button id="editPathBtn">Edit Paths</button>
+    <button id="editBallsBtn">Edit Balls</button>
 
-  <div id="container">
-    <canvas id="canvas" height="700px"></canvas>
-    <div id="palette-container">
-      <img id="palette-7" class="palette" src="img/palettes/p7.png" width="100px" height="16px">
-      <img id="palette-11" class="palette" src="img/palettes/p11.png" width="100px" height="16px">
-      <img id="palette-8" class="palette" src="img/palettes/p8.png" width="100px" height="16px">
-      <img id="palette-12" class="palette" src="img/palettes/p12.png" width="100px" height="16px">
-      <img id="palette-1" class="palette" src="img/palettes/p1.png" width="100px" height="16px">
-      <img id="palette-13" class="palette" src="img/palettes/p13.png" width="100px" height="16px">
-      <img id="palette-9" class="palette" src="img/palettes/p9.png" width="100px" height="16px">
-      <img id="palette-5" class="palette" src="img/palettes/p5.png" width="100px" height="16px">
-      <img id="palette-2" class="palette" src="img/palettes/p2.png" width="100px" height="16px">
-      <img id="palette-3" class="palette" src="img/palettes/p3.png" width="100px" height="16px">
-      <img id="palette-10" class="palette" src="img/palettes/p10.png" width="100px" height="16px">
-      <img id="palette-6" class="palette" src="img/palettes/p6.png" width="100px" height="16px">
-      <img id="palette-4" class="palette" src="img/palettes/p4.png" width="100px" height="16px">
+    
+
+    <label>
+      Background:
+      <input
+        type="range"
+        id="bgSlider"
+        min="0"
+        max="255"
+        step="1"
+        value="50" />
+    </label>
+
+    <div id="hint">
+      Draw paths, launch balls, have fun!
     </div>
-    <div id="swatch-container">
-      <span id="swatch-1" class="swatch"></span>
-      <span id="swatch-2" class="swatch"></span>
-      <span id="swatch-3" class="swatch"></span>
-      <span id="swatch-4" class="swatch"></span>
-      <span id="swatch-5" class="swatch"></span>
-      <span id="swatch-6" class="swatch"></span>
-      <span id="swatch-7" class="swatch"></span>
-      <span id="swatch-8" class="swatch"></span>
-      <span id="swatch-9" class="swatch"></span>
-      <span id="swatch-10" class="swatch"></span>
-      <span id="swatch-11" class="swatch"></span>
-      <span id="swatch-12" class="swatch"></span>
+    <div id="fpsCounter">FPS: 0</div>
+  </div>
+
+  <div id="main">
+    <div id="pathPanel">
+      <div id="pathPanelHeader">
+        <span>Paths</span>
+        <button id="addPathBtn">+ Path</button>
+      </div>
+      <div id="pathList"></div>
     </div>
-    <div id="tools">
-      <div id="fps">
+
+    <canvas id="canvas"></canvas>
+
+    <div id="palettePanel">
+      <div id="paletteHeader">Palettes</div>
+      <div id="paletteList"></div>
+      <div id="selectedPaletteHeader">Colors</div>
+      <div id="colorSwatchList"></div>
+      <div id="ballSizeContainer">
+        <label>
+          <span class="slider-label">Ball size:</span>
+          <input
+            type="range"
+            id="ballSizeSlider"
+            min="0"
+            max="30"
+            step="1"
+            value="10" />
+          <span id="ballSizeValue">10</span>
+        </label>
       </div>
-      <div id="path-1" class="path selected-path">
-        <span class="path-name">Path 1</span>
-      </div>
-      <div id="path-2" class="path">
-        <span class="path-name">Path 2</span>
-      </div>
-      <div id="path-3" class="path">
-        <span class="path-name">Path 3</span>
-      </div>
-      <div id="path-4" class="path">
-        <span class="path-name">Path 4</span>
-      </div>
-      <div id="path-5" class="path">
-        <span class="path-name">Path 5</span>
-      </div>
-      <div id="path-6" class="path">
-        <span class="path-name">Path 6</span>
-      </div>
-      <div id="path-7" class="path">
-        <span class="path-name">Path 7</span>
-      </div>
-      <div id="path-8" class="path">
-        <span class="path-name">Path 8</span>
-      </div>
-      <div id="path-9" class="path">
-        <span class="path-name">Path 9</span>
-      </div>
-      <div id="path-10" class="path">
-        <span class="path-name">Path 10</span>
-      </div>
-      <div id="controls-container">
-        <div id ="controls-headers">
-          <div id="ball-controls-header">ball</div>
-          <div id="path-controls-header">path</div>
-        </div>
-        <div id="ball-controls">
-          <p class="path-editor-heading">speed</p>
-          <div style="text-align: center;">
-            <button id="ball-slower-button">-</button>&nbsp;&nbsp;<button id="ball-faster-button">+</button>
-          </div>
-          <div class="path-editor-heading-spacer">&nbsp;</div>
-          <p class="path-editor-heading">size</p>
-          <div style="text-align: center;">
-            <button id="ball-smaller-button">-</button>&nbsp;&nbsp;<button id="ball-larger-button">+</button>
-          </div>
-          <div class="path-editor-heading-spacer">&nbsp;</div>
-          <p class="path-editor-heading">effects</p>
-          <div style="text-align: center;">
-            <span id="twirl" class="editor-option">twirl</span>
-          </div>
-          <div style="text-align: center;">
-            <span id="spark" class="editor-option">spark</span>
-          </div>
-          <div style="text-align: center;">
-            <span id="hide" class="editor-option">hide</span>
-          </div>
-          <!-- <div style="text-align: center;">
-            <span id="connect" class="editor-option">connect</span>
-          </div> -->
-        </div>
-        <div id="path-controls">
-          <div style="text-align: center;">
-            <span id="undo" class="editor-option">undo</span>
-          </div>
-          <div style="text-align: center;">
-            <span id="redo" class="editor-option">redo</span>
-          </div>
-        </div>
-      </div>
-      <div id="hide-paths">
-        <button id="hide-paths-button">Hide Paths</button>
-      </div>
-      <div id="launch">
-        <button id="launch-button">Launch!</button>
+      <div id="speedContainer">
+        <label>
+          <span class="slider-label">Speed:</span>
+          <input
+            type="range"
+            id="speedSlider"
+            min="0"
+            max="1000"
+            step="20"
+            value="400" />
+          <span id="speedValue">20</span>
+        </label>
       </div>
     </div>
   </div>
 
-  <div class="slidecontainer">
-    <input type="range" min="0" max="255" value="50" class="slider" id="bg-slider">
-  </div>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
 
+    const launchBtn = document.getElementById("launchBtn");
+    const editPathBtn = document.getElementById("editPathBtn");
+    const editBallsBtn = document.getElementById("editBallsBtn");
+    const speedSlider = document.getElementById("speedSlider");
+    const speedValue = document.getElementById("speedValue");
+    const bgSlider = document.getElementById("bgSlider");
+    const ballSizeSlider = document.getElementById("ballSizeSlider");
+    const ballSizeValue = document.getElementById("ballSizeValue");
+    const fpsCounter = document.getElementById("fpsCounter");
+
+    const addPathBtn = document.getElementById("addPathBtn");
+    const pathListEl = document.getElementById("pathList");
+
+    const paletteListEl = document.getElementById("paletteList");
+    const colorSwatchListEl = document.getElementById("colorSwatchList");
+
+    // ----- PALETTES -----
+    const paletteDefinitions = [
+      { id: 1, colors: ["#FFF0F3","#FFCCD5","#FFB3C1","#FF8FA3","#FF758F","#FF4D6D","#C9184A","#A4133C","#800F2F","#590D22"] },
+      { id: 2, colors: ["#F8F9FA","#E9ECEF","#DEE2E6","#CED4DA","#ADB5BD","#6C757D","#495057","#343A40","#212529"] },
+      { id: 3, colors: ["#80FFDB","#72EFDD","#64DFDF","#56CFE1","#48BFE3","#4EA8DE","#5390D9","#5E60CE","#6930C3","#7400B8"] },
+      { id: 4, colors: ["#FFFFFC","#FFC6FF","#BDB2FF","#A0C4FF","#9BF6FF","#CAFFBF","#FDFFB6","#FFD6A5","#FFADAD"] },
+      { id: 5, colors: ["#FFBA08","#FAA307","#F48C06","#E85D04","#DC2F02","#D00000","#9D0208","#6A040F","#370617","#03071E"] },
+      { id: 6, colors: ["#E63946","#F1FAEE","#A8DADC","#457B9D","#1D3557"] },
+      { id: 7, colors: ["#FF0000","#FF8700","#FFD300","#DEFF0A","#A1FF0A","#0AFF99","#0AEFFF","#147DF5","#580AFF","#BE0AFF"] },
+      { id: 8, colors: ["#CCFF33","#9EF01A","#70E000","#38B000","#008000","#007200","#006400","#004B23"] },
+      { id: 9, colors: ["#E0AAFF","#C77DFF","#9D4EDD","#7B2CBF","#5A189A","#3C096C","#240046","#10002B"] },
+      { id: 10, colors: ["#FF595E","#FFCA3A","#8AC926","#1982C4","#6A4C93"] },
+      { id: 11, colors: ["#E3F2FD","#BBDEFB","#90CAF9","#64B5F6","#42A5F5","#2196F3","#1E88E5","#1976D2","#1565C0","#0D47A1"] },
+      { id: 12, colors: ["#FFEA00","#FFDD00","#FFD000","#FFC300","#FFB700","#FFAA00","#FFA200","#FF9500","#FF8800","#FF7B00"] },
+      { id: 13, colors: ["#EDC4B3","#E6B8A2","#DEAB90","#D69F7E","#CD9777","#C38E70","#B07D62","#9D6B53","#8A5A44","#774936"] }
+    ];
+
+    let selectedPaletteId = paletteDefinitions[0].id; // start with first palette
+    let activeBallColor = paletteDefinitions[0].colors[5]; // 6th color (nice pink) in first palette
+
+    function renderPalettes() {
+      paletteListEl.innerHTML = "";
+      if (paletteDefinitions.length === 0) {
+        const msg = document.createElement("div");
+        msg.className = "no-palettes";
+        msg.textContent = "No palettes defined.";
+        paletteListEl.appendChild(msg);
+        return;
+      }
+
+      paletteDefinitions.forEach((palette) => {
+        const item = document.createElement("div");
+        item.className = "palette-item" + (palette.id === selectedPaletteId ? " selected" : "");
+        item.dataset.id = palette.id;
+
+        const preview = document.createElement("div");
+        preview.className = "palette-preview";
+
+        palette.colors.forEach(color => {
+          const seg = document.createElement("div");
+          seg.className = "palette-color-block";
+          seg.style.backgroundColor = color;
+          preview.appendChild(seg);
+        });
+
+        item.appendChild(preview);
+
+        item.addEventListener("click", () => {
+          selectedPaletteId = palette.id;
+          if (palette.colors.length > 0) {
+            activeBallColor = palette.colors[0];
+          }
+          renderPalettes();
+          renderColorSwatches();
+        });
+
+        paletteListEl.appendChild(item);
+      });
+    }
+
+    function renderColorSwatches() {
+      colorSwatchListEl.innerHTML = "";
+      const palette = paletteDefinitions.find(p => p.id === selectedPaletteId);
+      if (!palette || palette.colors.length === 0) {
+        const msg = document.createElement("div");
+        msg.className = "no-palettes";
+        msg.textContent = "Select a palette above.";
+        colorSwatchListEl.appendChild(msg);
+        return;
+      }
+
+      palette.colors.forEach(color => {
+        const sw = document.createElement("div");
+        sw.className =
+          "color-swatch" +
+          (color.toLowerCase() === activeBallColor.toLowerCase() ? " selected" : "");
+        sw.style.backgroundColor = color;
+        sw.addEventListener("click", () => {
+        if (editBallMode && selectedBalls.length > 0) {
+          selectedBalls.forEach(sel => {
+            sel.ball.color = color;
+          });
+        }
+        activeBallColor = color;
+        renderColorSwatches();
+      });
+        colorSwatchListEl.appendChild(sw);
+      });
+    }
+
+    // ----- PATHS / BALLS -----
+    const paths = [];
+    let nextPathId = 1;
+    let selectedPathId = null;
+
+    let canvasWidthCSS = 0;
+    let canvasHeightCSS = 0;
+
+    // Speed in pixels per second (all paths/balls share this)
+    let speedPixelsPerSecond = parseFloat(speedSlider.value);
+    function updateSpeedDisplay() {
+      const displaySpeed = speedPixelsPerSecond / 20;
+      speedValue.textContent = `${Math.round(displaySpeed)}`;
+    }
+    updateSpeedDisplay();
+
+    // Background grayscale value: 0 = black, 255 = white
+    let bgGray = parseInt(bgSlider.value, 10) || 50;
+    function updateBackground() {
+      const g = bgGray;
+      const color = `rgb(${g}, ${g}, ${g})`;
+      canvas.style.backgroundColor = color;
+    }
+    updateBackground();
+
+    // Ball size (radius in px)
+    let ballRadiusSetting = Number(ballSizeSlider.value);
+    function updateBallSizeDisplay() {
+      if (ballRadiusSetting <= 0) {
+        ballSizeValue.textContent = `?`;
+      } else {
+        ballSizeValue.textContent = `${ballRadiusSetting}`;
+      }
+    }
+    updateBallSizeDisplay();
+
+    // Edit modes
+    let editPathMode = false;
+    let editBallMode = false;
+    let draggingPath = null;
+    let draggingNodeIndex = -1;
+    let selectedBalls = [];
+    let isSelectingBalls = false;
+    let ballSelectionStart = null;
+    let ballSelectionCurrent = null;
+
+    function createNewPath(selectAfter = true) {
+      const path = {
+        id: nextPathId++,
+        nodes: [],         // [{ xNorm, yNorm }]
+        balls: [],         // [{ dist, color }]
+        pointsPx: [],      // [{ x, y }]
+        segments: [],      // [{ length, start, x1,y1,x2,y2 }]
+        totalLength: 0,
+        visible: true
+      };
+      paths.push(path);
+      if (selectAfter) {
+        selectedPathId = path.id;
+      }
+      renderPathList();
+      return path;
+    }
+
+    function getSelectedPath() {
+      if (selectedPathId == null) return null;
+      return paths.find(p => p.id === selectedPathId) || null;
+    }
+
+    function deletePathById(id) {
+      const idx = paths.findIndex(p => p.id === id);
+      if (idx === -1) return;
+
+      const path = paths[idx];
+
+      if (selectedBalls.length > 0) {
+        selectedBalls = selectedBalls.filter(sel => sel.path !== path);
+      }
+
+      paths.splice(idx, 1);
+
+      if (paths.length === 0) {
+        selectedPathId = null;
+      } else if (selectedPathId === id) {
+        const newIdx = Math.min(idx, paths.length - 1);
+        selectedPathId = paths[newIdx].id;
+      }
+
+      renderPathList();
+    }
+
+    function renderPathList() {
+      pathListEl.innerHTML = "";
+      paths.forEach((path, index) => {
+        const item = document.createElement("div");
+        item.className = "path-item" + (path.id === selectedPathId ? " selected" : "");
+        item.dataset.id = path.id;
+
+        const main = document.createElement("div");
+        main.className = "path-main";
+
+        const name = document.createElement("div");
+        name.className = "path-name";
+        name.textContent = `Path ${index + 1}`;
+
+        const meta = document.createElement("div");
+        meta.className = "path-meta";
+        meta.textContent = `${path.nodes.length} nodes • ${path.balls.length} balls`;
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-path-btn";
+        deleteBtn.textContent = "✕";
+        deleteBtn.title = "Delete this path";
+
+        const header = document.createElement("div");
+        header.className = "path-header";
+        header.appendChild(name);
+        header.appendChild(deleteBtn);
+
+        main.appendChild(header);
+        main.appendChild(meta);
+
+        const actions = document.createElement("div");
+        actions.className = "path-actions";
+
+        const visibilityBtn = document.createElement("button");
+        visibilityBtn.className = "toggle-visibility-btn";
+        const pathIsVisible = path.visible !== false;
+        visibilityBtn.textContent = pathIsVisible ? "Hide" : "Show";
+        visibilityBtn.title = pathIsVisible ? "Hide this path" : "Show this path";
+        actions.appendChild(visibilityBtn);
+
+        let closeBtn = null;
+        let spreadBtn = null;
+
+        if (path.id === selectedPathId) {
+          if (path.nodes.length >= 2) {
+            closeBtn = document.createElement("button");
+            closeBtn.className = "close-path-btn";
+            closeBtn.textContent = "Close";
+            closeBtn.title = "Close this path";
+            actions.appendChild(closeBtn);
+          }
+
+          if (path.balls.length >= 2 && path.totalLength > 0) {
+            spreadBtn = document.createElement("button");
+            spreadBtn.className = "spread-balls-btn";
+            spreadBtn.textContent = "Spread";
+            spreadBtn.title = "Evenly distribute balls along this path";
+            actions.appendChild(spreadBtn);
+          }
+        }
+
+        if (actions.childElementCount > 0) {
+          main.appendChild(actions);
+        }
+
+        item.appendChild(main);
+
+        item.addEventListener("click", (e) => {
+          if (
+            e.target === deleteBtn ||
+            e.target === visibilityBtn ||
+            (closeBtn && e.target === closeBtn) ||
+            (spreadBtn && e.target === spreadBtn)
+          ) {
+            return;
+          }
+          selectedPathId = path.id;
+          renderPathList();
+        });
+
+        deleteBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          deletePathById(path.id);
+        });
+
+        visibilityBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const currentlyVisible = path.visible !== false;
+        path.visible = !currentlyVisible;
+        renderPathList();
+      });
+
+        if (closeBtn) {
+          closeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            closeSelectedPath();
+          });
+        }
+
+        if (spreadBtn) {
+          spreadBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            distributeBallsEvenlyOnPath(path);
+            renderPathList();
+          });
+        }
+
+        pathListEl.appendChild(item);
+      });
+      updateEditingUIState();
+    }
+
+        function rebuildPathMetricsForPath(path) {
+      path.pointsPx = path.nodes.map(node => ({
+        x: node.xNorm * canvasWidthCSS,
+        y: node.yNorm * canvasHeightCSS
+      }));
+
+      path.segments = [];
+      path.totalLength = 0;
+
+      if (path.pointsPx.length < 2) {
+        return;
+      }
+
+      for (let i = 0; i < path.pointsPx.length - 1; i++) {
+        const p1 = path.pointsPx[i];
+        const p2 = path.pointsPx[i + 1];
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        const len = Math.hypot(dx, dy);
+
+        const seg = {
+          length: len,
+          start: path.totalLength,
+          x1: p1.x,
+          y1: p1.y,
+          x2: p2.x,
+          y2: p2.y
+        };
+
+        path.segments.push(seg);
+        path.totalLength += len;
+      }
+    }
+
+    function rebuildAllPathMetrics() {
+      for (const path of paths) {
+        rebuildPathMetricsForPath(path);
+      }
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+
+      canvasWidthCSS = rect.width;
+      canvasHeightCSS = rect.height;
+
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      rebuildAllPathMetrics();
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    function addNodeAtCssPosition(xCss, yCss) {
+      if (canvasWidthCSS === 0 || canvasHeightCSS === 0) return;
+
+      let path = getSelectedPath();
+      if (!path) {
+        path = createNewPath(true);
+      }
+
+      const xNorm = xCss / canvasWidthCSS;
+      const yNorm = yCss / canvasHeightCSS;
+
+      path.nodes.push({ xNorm, yNorm });
+      rebuildPathMetricsForPath(path);
+      renderPathList();
+    }
+
+    function hitTestNodeGlobal(xCss, yCss) {
+      const threshold = 10;
+      const thresholdSq = threshold * threshold;
+      let best = null;
+      let bestDistSq = Infinity;
+
+      for (const path of paths) {
+        if (!path.pointsPx || path.pointsPx.length === 0) continue;
+        for (let i = 0; i < path.pointsPx.length; i++) {
+          const p = path.pointsPx[i];
+          const dx = xCss - p.x;
+          const dy = yCss - p.y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq <= thresholdSq && distSq < bestDistSq) {
+            bestDistSq = distSq;
+            best = { path, nodeIndex: i };
+          }
+        }
+      }
+
+      return best;
+    }
+
+    function hitTestBallGlobal(xCss, yCss) {
+      const defaultRadius = ballRadiusSetting || 8;
+      let best = null;
+      let bestDistSq = Infinity;
+
+      for (const path of paths) {
+        if (!path.balls || path.balls.length === 0) continue;
+        for (let i = 0; i < path.balls.length; i++) {
+          const ball = path.balls[i];
+          const pos = getPointAlongPathDistance(path, ball.dist);
+          if (!pos) continue;
+
+          const r = ball.radius != null ? ball.radius : defaultRadius;
+          const threshold = r + 4;
+          const thresholdSq = threshold * threshold;
+
+          const dx = xCss - pos.x;
+          const dy = yCss - pos.y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq <= thresholdSq && distSq < bestDistSq) {
+            bestDistSq = distSq;
+            best = { path, index: i, ball };
+          }
+        }
+      }
+
+      return best;
+    }
+
+    function updateNodeAtIndexFromCss(path, i, xCss, yCss) {
+      if (i < 0 || i >= path.nodes.length) return;
+      if (canvasWidthCSS === 0 || canvasHeightCSS === 0) return;
+
+      const xNorm = Math.min(1, Math.max(0, xCss / canvasWidthCSS));
+      const yNorm = Math.min(1, Math.max(0, yCss / canvasHeightCSS));
+
+      path.nodes[i].xNorm = xNorm;
+      path.nodes[i].yNorm = yNorm;
+      rebuildPathMetricsForPath(path);
+    }
+
+    function isPathClosed(path) {
+      if (path.nodes.length < 3) return false;
+      const first = path.nodes[0];
+      const last = path.nodes[path.nodes.length - 1];
+      const dx = first.xNorm - last.xNorm;
+      const dy = first.yNorm - last.yNorm;
+      const distSq = dx * dx + dy * dy;
+      const eps = 1e-6;
+      return distSq < eps;
+    }
+
+    function closeSelectedPath() {
+      const path = getSelectedPath();
+      if (!path) return;
+      if (path.nodes.length < 2) return;
+      if (isPathClosed(path)) return;
+
+      const first = path.nodes[0];
+      path.nodes.push({ xNorm: first.xNorm, yNorm: first.yNorm });
+      rebuildPathMetricsForPath(path);
+      renderPathList();
+    }
+
+    function distributeBallsEvenlyOnPath(path) {
+      if (!path || !path.balls || path.balls.length === 0) return;
+      if (!path.totalLength || path.totalLength <= 0) return;
+
+      const n = path.balls.length;
+      if (n === 1) {
+        path.balls[0].dist = 0;
+        return;
+      }
+
+      const step = path.totalLength / n;
+      for (let i = 0; i < n; i++) {
+        path.balls[i].dist = step * i;
+      }
+    }
+
+    function getPointAlongPathDistance(path, distance) {
+      if (!path.pointsPx || path.pointsPx.length === 0) {
+        return null;
+      }
+      if (path.pointsPx.length === 1 || path.totalLength === 0) {
+        return path.pointsPx[0];
+      }
+
+      let d = distance % path.totalLength;
+      if (d < 0) d += path.totalLength;
+
+      let seg = path.segments[path.segments.length - 1];
+      for (let i = 0; i < path.segments.length; i++) {
+        const s = path.segments[i];
+        if (d <= s.start + s.length) {
+          seg = s;
+          break;
+        }
+      }
+
+      const distIntoSeg = d - seg.start;
+      const segT = seg.length > 0 ? distIntoSeg / seg.length : 0;
+
+      const x = seg.x1 + (seg.x2 - seg.x1) * segT;
+      const y = seg.y1 + (seg.y2 - seg.y1) * segT;
+
+      return { x, y };
+    }
+
+    function launchBall() {
+      const path = getSelectedPath();
+      if (!path) return;
+      if (path.nodes.length === 0) return;
+      if (editPathMode || editBallMode) return;
+
+      const radius = (ballRadiusSetting <= 0)
+        ? Math.round(4 + Math.random() * (30 - 4))
+        : ballRadiusSetting;
+      path.balls.push({ dist: 0, color: activeBallColor, radius });
+      renderPathList();
+    }
+
+    function update(dt) {
+      if (editPathMode || editBallMode) return;
+
+      for (const path of paths) {
+        if (!path.pointsPx || path.pointsPx.length < 2 || path.totalLength === 0) continue;
+        const deltaDist = speedPixelsPerSecond * dt;
+        for (const ball of path.balls) {
+          ball.dist = (ball.dist + deltaDist) % path.totalLength;
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvasWidthCSS, canvasHeightCSS);
+
+      const pathGray = 255 - bgGray;
+      const pathColor = `rgb(${pathGray}, ${pathGray}, ${pathGray})`;
+
+      // Draw paths & nodes
+      for (const path of paths) {
+        if (!path.pointsPx || path.pointsPx.length === 0) continue;
+
+        const pathIsVisibleForDraw = editPathMode || path.visible !== false;
+        if (!pathIsVisibleForDraw) continue;
+
+        const isSelected = path.id === selectedPathId;
+
+        // Thin dotted line between nodes
+        ctx.save();
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = isSelected ? 1.5 : 1;
+        ctx.strokeStyle = pathColor;
+
+        ctx.beginPath();
+        ctx.moveTo(path.pointsPx[0].x, path.pointsPx[0].y);
+        for (let i = 1; i < path.pointsPx.length; i++) {
+          ctx.lineTo(path.pointsPx[i].x, path.pointsPx[i].y);
+        }
+        ctx.stroke();
+        ctx.restore(); // reset dash, lineWidth etc.
+
+        // Node circles
+        const baseRadius = 3;
+        const editRadius = 6;
+        const rNode = editPathMode ? editRadius : baseRadius;
+
+        ctx.fillStyle = pathColor;
+        ctx.strokeStyle = pathColor;
+
+        const lastIndex = path.pointsPx.length - 1;
+
+        for (let i = 0; i < path.pointsPx.length; i++) {
+          const p = path.pointsPx[i];
+
+          // filled circle
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, rNode, 0, Math.PI * 2);
+          ctx.fill();
+
+          // last node: extra ring
+          if (i === lastIndex) {
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, rNode + 3, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw balls (hidden only in path edit mode)
+      if (!editPathMode) {
+        for (const path of paths) {
+          if (!path.balls || path.balls.length === 0) continue;
+          for (let i = 0; i < path.balls.length; i++) {
+            const ball = path.balls[i];
+            const pos = getPointAlongPathDistance(path, ball.dist);
+            if (!pos) continue;
+
+            const rBall = ball.radius != null ? ball.radius : ballRadiusSetting;
+
+            ctx.beginPath();
+            ctx.fillStyle = ball.color || "#40e0ff";
+            ctx.arc(pos.x, pos.y, rBall, 0, Math.PI * 2);
+            ctx.fill();
+
+            // highlight selected balls in edit-balls mode
+            if (
+              editBallMode &&
+              selectedBalls.some(sel => sel.path === path && sel.index === i)
+            ) {
+              ctx.lineWidth = 2;
+              ctx.strokeStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.arc(pos.x, pos.y, rBall + 3, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      // Draw selection rectangle in ball edit mode
+      if (editBallMode && isSelectingBalls && ballSelectionStart && ballSelectionCurrent) {
+        const x = Math.min(ballSelectionStart.xCss, ballSelectionCurrent.xCss);
+        const y = Math.min(ballSelectionStart.yCss, ballSelectionCurrent.yCss);
+        const w = Math.abs(ballSelectionCurrent.xCss - ballSelectionStart.xCss);
+        const h = Math.abs(ballSelectionCurrent.yCss - ballSelectionStart.yCss);
+        ctx.save();
+        ctx.strokeStyle = "rgba(255,255,255,0.8)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 2]);
+        ctx.strokeRect(x, y, w, h);
+        ctx.restore();
+      }
+    }
+
+    let lastTime = performance.now();
+    let fps = 0;
+
+    function loop(now) {
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+
+      update(dt);
+      draw();
+
+      const instFps = dt > 0 ? 1 / dt : 0;
+      fps = fps * 0.9 + instFps * 0.1;
+      if (fpsCounter) {
+        fpsCounter.textContent = `FPS: ${fps.toFixed(0)}`;
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+
+    // Pointer helpers
+    function getPointerCssPos(event) {
+      const rect = canvas.getBoundingClientRect();
+      const xCss = event.clientX - rect.left;
+      const yCss = event.clientY - rect.top;
+      return { xCss, yCss };
+    }
+
+    function onPointerDown(event) {
+      if (event.button !== 0) return;
+
+      const { xCss, yCss } = getPointerCssPos(event);
+
+      if (editPathMode) {
+        const hit = hitTestNodeGlobal(xCss, yCss);
+        if (hit) {
+          draggingPath = hit.path;
+          draggingNodeIndex = hit.nodeIndex;
+          canvas.setPointerCapture(event.pointerId);
+        }
+      } else if (editBallMode) {
+        isSelectingBalls = true;
+        ballSelectionStart = { xCss, yCss };
+        ballSelectionCurrent = { xCss, yCss };
+        canvas.setPointerCapture(event.pointerId);
+      } else {
+        addNodeAtCssPosition(xCss, yCss);
+      }
+    }
+
+    function onPointerMove(event) {
+      const { xCss, yCss } = getPointerCssPos(event);
+
+      if (editPathMode) {
+        if (!draggingPath || draggingNodeIndex === -1) return;
+        updateNodeAtIndexFromCss(draggingPath, draggingNodeIndex, xCss, yCss);
+        return;
+      }
+
+      if (editBallMode && isSelectingBalls) {
+        ballSelectionCurrent = { xCss, yCss };
+      }
+    }
+
+    function onPointerUpOrCancel(event) {
+      const { xCss, yCss } = getPointerCssPos(event);
+
+      if (editPathMode) {
+        if (draggingPath || draggingNodeIndex !== -1) {
+          draggingPath = null;
+          draggingNodeIndex = -1;
+        }
+      }
+
+      if (editBallMode && isSelectingBalls && ballSelectionStart && ballSelectionCurrent) {
+        const dx = ballSelectionCurrent.xCss - ballSelectionStart.xCss;
+        const dy = ballSelectionCurrent.yCss - ballSelectionStart.yCss;
+        const distSq = dx * dx + dy * dy;
+        const clickThresholdSq = 16; // 4px movement threshold
+
+        if (distSq <= clickThresholdSq) {
+          // Treat as a click selection
+          const hitBall = hitTestBallGlobal(ballSelectionStart.xCss, ballSelectionStart.yCss);
+          if (hitBall) {
+            selectedBalls = [hitBall];
+          } else {
+            selectedBalls = [];
+          }
+        } else {
+          // Rectangle selection
+          const minX = Math.min(ballSelectionStart.xCss, ballSelectionCurrent.xCss);
+          const maxX = Math.max(ballSelectionStart.xCss, ballSelectionCurrent.xCss);
+          const minY = Math.min(ballSelectionStart.yCss, ballSelectionCurrent.yCss);
+          const maxY = Math.max(ballSelectionStart.yCss, ballSelectionCurrent.yCss);
+
+          const newSelection = [];
+          for (const path of paths) {
+            if (!path.balls || path.balls.length === 0) continue;
+            for (let i = 0; i < path.balls.length; i++) {
+              const ball = path.balls[i];
+              const pos = getPointAlongPathDistance(path, ball.dist);
+              if (!pos) continue;
+              if (pos.x >= minX && pos.x <= maxX && pos.y >= minY && pos.y <= maxY) {
+                newSelection.push({ path, index: i, ball });
+              }
+            }
+          }
+          selectedBalls = newSelection;
+        }
+      }
+
+      isSelectingBalls = false;
+      ballSelectionStart = null;
+      ballSelectionCurrent = null;
+
+      try {
+        canvas.releasePointerCapture(event.pointerId);
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerup", onPointerUpOrCancel);
+    canvas.addEventListener("pointercancel", onPointerUpOrCancel);
+    canvas.addEventListener("pointerleave", onPointerUpOrCancel);
+
+    // Control wiring
+    speedSlider.addEventListener("input", () => {
+      speedPixelsPerSecond = parseFloat(speedSlider.value) || 0;
+      updateSpeedDisplay();
+    });
+
+    bgSlider.addEventListener("input", () => {
+      bgGray = parseInt(bgSlider.value, 10) || 0;
+      updateBackground();
+    });
+
+    ballSizeSlider.addEventListener("input", () => {
+      ballRadiusSetting = Number(ballSizeSlider.value);
+      updateBallSizeDisplay();
+      if (editBallMode && selectedBalls.length > 0) {
+        selectedBalls.forEach(sel => {
+          const newRadius = (ballRadiusSetting <= 0)
+            ? Math.round(4 + Math.random() * (30 - 4))
+            : ballRadiusSetting;
+          sel.ball.radius = newRadius;
+        });
+      }
+    });
+
+    launchBtn.addEventListener("click", () => {
+      launchBall();
+    });
+
+    window.addEventListener("keydown", (event) => {
+      // Space: launch ball (if not in edit modes)
+      if (event.code === "Space") {
+        event.preventDefault();
+        launchBall();
+        return;
+      }
+
+      // Delete: remove selected balls in edit-balls mode
+      if ((event.key === "Delete" || event.code === "Delete") && editBallMode) {
+        if (selectedBalls.length > 0) {
+          const map = new Map();
+          for (const sel of selectedBalls) {
+            if (!map.has(sel.path)) {
+              map.set(sel.path, []);
+            }
+            map.get(sel.path).push(sel.index);
+          }
+          for (const [path, indexList] of map.entries()) {
+            indexList.sort((a, b) => b - a);
+            for (const idx of indexList) {
+              if (idx >= 0 && idx < path.balls.length) {
+                path.balls.splice(idx, 1);
+              }
+            }
+          }
+          selectedBalls = [];
+          renderPathList();
+        }
+        event.preventDefault();
+        return;
+      }
+
+      // C: close the currently selected path
+      if (event.code === "KeyC" || event.key === "c" || event.key === "C") {
+        closeSelectedPath();
+        event.preventDefault();
+      }
+    });
+
+    function updateCanvasCursor() {
+      if (editPathMode) {
+        canvas.style.cursor = "default";
+      } else if (editBallMode) {
+        canvas.style.cursor = "pointer";
+      } else {
+        canvas.style.cursor = "crosshair";
+      }
+    }
+
+    function updateEditingUIState() {
+      const editing = editPathMode || editBallMode;
+
+      // Launch/add are disabled in any edit mode
+      launchBtn.disabled = editing;
+      addPathBtn.disabled = editing;
+
+      // Mode buttons: only the OTHER mode is disabled
+      editPathBtn.disabled = editBallMode;
+      editBallsBtn.disabled = editPathMode;
+
+      const deleteButtons = pathListEl.querySelectorAll(".delete-path-btn");
+      deleteButtons.forEach(btn => {
+        btn.disabled = editing;
+      });
+
+      const closeButtons = pathListEl.querySelectorAll(".close-path-btn");
+      closeButtons.forEach(btn => {
+        btn.disabled = editing;
+      });
+
+      const spreadButtons = pathListEl.querySelectorAll(".spread-balls-btn");
+      spreadButtons.forEach(btn => {
+        btn.disabled = editing;
+      });
+
+      const visibilityButtons = pathListEl.querySelectorAll(".toggle-visibility-btn");
+      visibilityButtons.forEach(btn => {
+        btn.disabled = editing;
+      });
+    }
+
+    editPathBtn.addEventListener("click", () => {
+      editPathMode = !editPathMode;
+      if (editPathMode) {
+        // turning on path edit mode disables ball edit mode
+        editBallMode = false;
+        selectedBalls = [];
+        isSelectingBalls = false;
+        ballSelectionStart = null;
+        ballSelectionCurrent = null;
+        editBallsBtn.textContent = "Edit Balls";
+      }
+      draggingPath = null;
+      draggingNodeIndex = -1;
+      editPathBtn.textContent = editPathMode ? "Save Paths" : "Edit Paths";
+      editPathBtn.classList.toggle("mode-active", editPathMode);
+      editBallsBtn.classList.toggle("mode-active", editBallMode);
+      updateEditingUIState();
+      updateCanvasCursor();
+    });
+
+    editBallsBtn.addEventListener("click", () => {
+      editBallMode = !editBallMode;
+      if (editBallMode) {
+        // turning on ball edit mode disables path edit mode
+        editPathMode = false;
+        draggingPath = null;
+        draggingNodeIndex = -1;
+        editPathBtn.textContent = "Edit Paths";
+      } else {
+        selectedBalls = [];
+        isSelectingBalls = false;
+        ballSelectionStart = null;
+        ballSelectionCurrent = null;
+      }
+      editBallsBtn.textContent = editBallMode ? "Save Balls" : "Edit Balls";
+      editPathBtn.classList.toggle("mode-active", editPathMode);
+      editBallsBtn.classList.toggle("mode-active", editBallMode);
+      updateEditingUIState();
+      updateCanvasCursor();
+    });
+
+    addPathBtn.addEventListener("click", () => {
+      createNewPath(true);
+    });
+
+    // Set initial cursor
+    updateCanvasCursor();
+
+    // Initial palette render
+    renderPalettes();
+    renderColorSwatches();
+  </script>
 </body>
-
 </html>
