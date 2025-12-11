@@ -190,12 +190,33 @@
       color: #ff7676;
     }
 
+    .path-actions-container {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.15rem;
+      align-items: flex-start;
+    }
+
+    .path-action-column {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      flex: 1 1 auto;
+    }
+
+    .path-action-column-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #aaa;
+      margin-bottom: 0.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
     .path-actions {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.25rem;
-      margin-top: 0.15rem;
+      flex-direction: column;
+      gap: 0.2rem;
     }
 
     .close-path-btn {
@@ -205,10 +226,25 @@
       font-size: 0.75rem;
       cursor: pointer;
       padding: 0.1rem 0.35rem;
+      text-align: left;
     }
 
     .close-path-btn:hover {
       color: #a0e0ff;
+    }
+
+    .undo-path-btn {
+      border: none;
+      background: transparent;
+      color: #ccc;
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 0.1rem 0.35rem;
+      text-align: left;
+    }
+
+    .undo-path-btn:hover {
+      color: #ffa0a0;
     }
 
     .spread-balls-btn {
@@ -218,6 +254,7 @@
       font-size: 0.75rem;
       cursor: pointer;
       padding: 0.1rem 0.35rem;
+      text-align: left;
     }
 
     .spread-balls-btn:hover {
@@ -231,6 +268,7 @@
       font-size: 0.75rem;
       cursor: pointer;
       padding: 0.1rem 0.35rem;
+      text-align: left;
     }
 
     .toggle-visibility-btn:hover {
@@ -680,50 +718,108 @@
         main.appendChild(header);
         main.appendChild(meta);
 
-        const actions = document.createElement("div");
-        actions.className = "path-actions";
-
-        const visibilityBtn = document.createElement("button");
-        visibilityBtn.className = "toggle-visibility-btn";
-        const pathIsVisible = path.visible !== false;
-        visibilityBtn.textContent = pathIsVisible ? "Hide" : "Show";
-        visibilityBtn.title = pathIsVisible ? "Hide this path" : "Show this path";
-        actions.appendChild(visibilityBtn);
-
-        let closeBtn = null;
-        let spreadBtn = null;
-
+        // Only show actions container for selected path
         if (path.id === selectedPathId) {
-          if (path.nodes.length >= 2) {
-            closeBtn = document.createElement("button");
-            closeBtn.className = "close-path-btn";
-            closeBtn.textContent = "Close";
-            closeBtn.title = "Close this path";
-            actions.appendChild(closeBtn);
-          }
+          const actionsContainer = document.createElement("div");
+          actionsContainer.className = "path-actions-container";
 
-          if (path.balls.length >= 2 && path.totalLength > 0) {
-            spreadBtn = document.createElement("button");
-            spreadBtn.className = "spread-balls-btn";
-            spreadBtn.textContent = "Spread";
-            spreadBtn.title = "Evenly distribute balls along this path";
-            actions.appendChild(spreadBtn);
-          }
-        }
+          // Path actions column
+          const pathColumn = document.createElement("div");
+          pathColumn.className = "path-action-column";
 
-        if (actions.childElementCount > 0) {
-          main.appendChild(actions);
+          const pathTitle = document.createElement("div");
+          pathTitle.className = "path-action-column-title";
+          pathTitle.textContent = "Path";
+          pathColumn.appendChild(pathTitle);
+
+          const pathActions = document.createElement("div");
+          pathActions.className = "path-actions";
+
+          // Hide/Show button
+          const visibilityBtn = document.createElement("button");
+          visibilityBtn.className = "toggle-visibility-btn";
+          const pathIsVisible = path.visible !== false;
+          visibilityBtn.textContent = pathIsVisible ? "Hide" : "Show";
+          visibilityBtn.title = pathIsVisible ? "Hide this path" : "Show this path";
+          visibilityBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const currentlyVisible = path.visible !== false;
+            path.visible = !currentlyVisible;
+            renderPathList();
+          });
+          pathActions.appendChild(visibilityBtn);
+
+          // Close button (always visible, but no-ops if conditions not met)
+          const closeBtn = document.createElement("button");
+          closeBtn.className = "close-path-btn";
+          closeBtn.textContent = "Close";
+          closeBtn.title = "Close this path";
+          closeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            // Only close if path has at least 2 nodes
+            if (path.nodes.length >= 2) {
+              closeSelectedPath();
+            }
+            // Otherwise, no-op
+          });
+          pathActions.appendChild(closeBtn);
+
+          // Undo button (always visible, but no-ops if no nodes)
+          const undoBtn = document.createElement("button");
+          undoBtn.className = "undo-path-btn";
+          undoBtn.textContent = "Undo";
+          undoBtn.title = "Remove the most recently placed node";
+          undoBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            undoLastNode(path);
+          });
+          pathActions.appendChild(undoBtn);
+
+          pathColumn.appendChild(pathActions);
+          actionsContainer.appendChild(pathColumn);
+
+          // Ball actions column
+          const ballsColumn = document.createElement("div");
+          ballsColumn.className = "path-action-column";
+
+          const ballsTitle = document.createElement("div");
+          ballsTitle.className = "path-action-column-title";
+          ballsTitle.textContent = "Balls";
+          ballsColumn.appendChild(ballsTitle);
+
+          const ballsActions = document.createElement("div");
+          ballsActions.className = "path-actions";
+
+          // Spread button (always visible, but no-ops if conditions not met)
+          const spreadBtn = document.createElement("button");
+          spreadBtn.className = "spread-balls-btn";
+          spreadBtn.textContent = "Spread";
+          spreadBtn.title = "Evenly distribute balls along this path";
+          spreadBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            // Only spread if there are at least 2 balls and path has valid length
+            if (path.balls.length >= 2 && path.totalLength > 0) {
+              distributeBallsEvenlyOnPath(path);
+              renderPathList();
+            }
+            // Otherwise, no-op
+          });
+          ballsActions.appendChild(spreadBtn);
+
+          ballsColumn.appendChild(ballsActions);
+          actionsContainer.appendChild(ballsColumn);
+
+          main.appendChild(actionsContainer);
         }
 
         item.appendChild(main);
 
         item.addEventListener("click", (e) => {
-          if (
-            e.target === deleteBtn ||
-            e.target === visibilityBtn ||
-            (closeBtn && e.target === closeBtn) ||
-            (spreadBtn && e.target === spreadBtn)
-          ) {
+          if (e.target === deleteBtn) {
+            return;
+          }
+          // Don't select path if clicking on action buttons
+          if (e.target.closest(".path-actions-container")) {
             return;
           }
           selectedPathId = path.id;
@@ -734,28 +830,6 @@
           e.stopPropagation();
           deletePathById(path.id);
         });
-
-        visibilityBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const currentlyVisible = path.visible !== false;
-        path.visible = !currentlyVisible;
-        renderPathList();
-      });
-
-        if (closeBtn) {
-          closeBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            closeSelectedPath();
-          });
-        }
-
-        if (spreadBtn) {
-          spreadBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            distributeBallsEvenlyOnPath(path);
-            renderPathList();
-          });
-        }
 
         pathListEl.appendChild(item);
       });
@@ -909,6 +983,27 @@
       const distSq = dx * dx + dy * dy;
       const eps = 1e-6;
       return distSq < eps;
+    }
+
+    function undoLastNode(path) {
+      if (!path || path.nodes.length === 0) return;
+
+      // Remove the last node
+      path.nodes.pop();
+
+      // If path is now empty, delete all balls associated with it
+      if (path.nodes.length === 0) {
+        // Clean up selected balls if any were from this path
+        if (selectedBalls.length > 0) {
+          selectedBalls = selectedBalls.filter(sel => sel.path !== path);
+        }
+        // Clear all balls
+        path.balls = [];
+      }
+
+      // Rebuild path metrics and update display
+      rebuildPathMetricsForPath(path);
+      renderPathList();
     }
 
     function closeSelectedPath() {
@@ -1289,6 +1384,15 @@
       // C: close the currently selected path
       if (event.code === "KeyC" || event.key === "c" || event.key === "C") {
         closeSelectedPath();
+        event.preventDefault();
+      }
+
+      // U: undo last node in currently selected path
+      if (event.code === "KeyU" || event.key === "u" || event.key === "U") {
+        const path = getSelectedPath();
+        if (path) {
+          undoLastNode(path);
+        }
         event.preventDefault();
       }
     });
