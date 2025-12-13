@@ -451,7 +451,13 @@
       font-size: 0.85rem;
     }
 
-    #ballSizeContainer label {
+    #bgContainer {
+      margin-top: 0.4rem;
+      font-size: 0.85rem;
+    }
+
+    #ballSizeContainer label,
+    #bgContainer label {
       display: grid;
       grid-template-columns: 70px minmax(0, 1fr) 40px;
       column-gap: 0.3rem;
@@ -462,13 +468,15 @@
       white-space: nowrap;
     }
 
-    #ballSizeSlider {
+    #ballSizeSlider,
+    #bgSlider {
       width: 100%;
       min-width: 0;
       max-width: 100%;
     }
 
-    #ballSizeValue {
+    #ballSizeValue,
+    #bgValue {
       min-width: 32px;
       text-align: right;
       opacity: 0.8;
@@ -481,18 +489,13 @@
     <button id="editPathBtn">Edit Paths</button>
     <button id="editBallsBtn">Edit Balls</button>
 
-    
-
-    <label>
-      Background:
-      <input
-        type="range"
-        id="bgSlider"
-        min="0"
-        max="255"
-        step="1"
-        value="50" />
-    </label>
+    <button id="newBtn" style="margin-left: 1rem;">New</button>
+    <button id="saveBtn">Save</button>
+    <select id="savedDrawingsSelect" style="padding: 0.4rem 0.6rem; font-size: 0.9rem; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 4px;">
+      <option value="">Load drawing...</option>
+    </select>
+    <button id="loadBtn">Load</button>
+    <button id="deleteSaveBtn">Delete</button>
 
     <div id="hint">
       Draw paths, launch balls, have fun!
@@ -529,6 +532,19 @@
           <span id="ballSizeValue">10</span>
         </label>
       </div>
+      <div id="bgContainer">
+        <label>
+          <span class="slider-label">Background:</span>
+          <input
+            type="range"
+            id="bgSlider"
+            min="0"
+            max="255"
+            step="1"
+            value="50" />
+          <span id="bgValue">50</span>
+        </label>
+      </div>
     </div>
   </div>
 
@@ -540,6 +556,7 @@
     const editPathBtn = document.getElementById("editPathBtn");
     const editBallsBtn = document.getElementById("editBallsBtn");
     const bgSlider = document.getElementById("bgSlider");
+    const bgValue = document.getElementById("bgValue");
     const ballSizeSlider = document.getElementById("ballSizeSlider");
     const ballSizeValue = document.getElementById("ballSizeValue");
     const fpsCounter = document.getElementById("fpsCounter");
@@ -650,6 +667,210 @@
     // Track last emission time per ball to control emission frequency
     const ballLastEmission = new Map(); // pathId-ballIndex -> lastEmissionTime
 
+    // ----- SAVE / LOAD -----
+    const saveBtn = document.getElementById("saveBtn");
+    const loadBtn = document.getElementById("loadBtn");
+    const deleteSaveBtn = document.getElementById("deleteSaveBtn");
+    const savedDrawingsSelect = document.getElementById("savedDrawingsSelect");
+    let currentSaveName = null;
+
+    const STORAGE_KEY = "turbo-crazy-drawings";
+
+    function getSavedDrawings() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveDrawings(drawings) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(drawings));
+      } catch (e) {
+        alert("Failed to save: " + e.message);
+      }
+    }
+
+    function updateSavedDrawingsList() {
+      const drawings = getSavedDrawings();
+      savedDrawingsSelect.innerHTML = '<option value="">Load drawing...</option>';
+      for (const name in drawings) {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        if (name === currentSaveName) {
+          option.selected = true;
+        }
+        savedDrawingsSelect.appendChild(option);
+      }
+    }
+
+    function serializeDrawing() {
+      // Compact serialization: only save essential data
+      return {
+        ver: 1, // version
+        p: paths.map(path => ({
+          n: path.nodes.map(n => [n.xNorm, n.yNorm]), // nodes as [x,y] arrays
+          b: path.balls.map(b => ({
+            d: b.dist,
+            c: b.color,
+            r: b.radius
+          })),
+          v: path.visible !== false ? 1 : 0,
+          bv: path.ballsVisible !== false ? 1 : 0,
+          s: path.speed != null ? path.speed : 400,
+          e: path.effect || null
+        })),
+        bg: bgGray,
+        bs: ballRadiusSetting
+      };
+    }
+
+    function deserializeDrawing(data) {
+      if (!data || !data.p) return false;
+      
+      // Clear current state
+      paths.length = 0;
+      selectedPathId = null;
+      selectedBalls = [];
+      ballLastEmission.clear();
+      effects.length = 0;
+      nextPathId = 1;
+      
+      // Restore paths
+      for (let index = 0; index < data.p.length; index++) {
+        const pathData = data.p[index];
+        const path = {
+          id: nextPathId++,
+          nodes: pathData.n.map(n => ({ xNorm: n[0], yNorm: n[1] })),
+          balls: pathData.b.map(b => ({
+            dist: b.d,
+            color: b.c,
+            radius: b.r
+          })),
+          pointsPx: [],
+          segments: [],
+          totalLength: 0,
+          visible: pathData.v !== 0,
+          ballsVisible: pathData.bv !== 0,
+          speed: pathData.s != null ? pathData.s : 400,
+          effect: pathData.e || null
+        };
+        paths.push(path);
+        if (index === 0) {
+          selectedPathId = path.id;
+        }
+      }
+      
+      // Restore settings
+      if (data.bg != null) {
+        bgGray = data.bg;
+        bgSlider.value = bgGray;
+        updateBackground();
+      }
+      if (data.bs != null) {
+        ballRadiusSetting = data.bs;
+        ballSizeSlider.value = ballRadiusSetting;
+        updateBallSizeDisplay();
+      }
+      
+      // Rebuild path metrics
+      rebuildAllPathMetrics();
+      renderPathList();
+      
+      return true;
+    }
+
+    const newBtn = document.getElementById("newBtn");
+    
+    newBtn.addEventListener("click", () => {
+      if (paths.length > 0 && !confirm("Start a new drawing? This will clear your current work.")) {
+        return;
+      }
+      
+      // Clear everything
+      paths.length = 0;
+      selectedPathId = null;
+      selectedBalls = [];
+      ballLastEmission.clear();
+      effects.length = 0;
+      nextPathId = 1;
+      currentSaveName = null;
+      
+      // Reset UI
+      renderPathList();
+      updateSavedDrawingsList();
+    });
+
+    saveBtn.addEventListener("click", () => {
+      if (paths.length === 0) {
+        alert("Nothing to save!");
+        return;
+      }
+      
+      let saveName = currentSaveName;
+      if (!saveName) {
+        saveName = prompt("Enter a name for this drawing:");
+        if (!saveName || saveName.trim() === "") {
+          return;
+        }
+        saveName = saveName.trim();
+      }
+      
+      const drawings = getSavedDrawings();
+      drawings[saveName] = serializeDrawing();
+      saveDrawings(drawings);
+      currentSaveName = saveName;
+      updateSavedDrawingsList();
+    });
+
+    loadBtn.addEventListener("click", () => {
+      const selectedName = savedDrawingsSelect.value;
+      if (!selectedName) {
+        alert("Please select a drawing to load.");
+        return;
+      }
+      
+      if (paths.length > 0 && !confirm("This will replace your current drawing. Continue?")) {
+        return;
+      }
+      
+      const drawings = getSavedDrawings();
+      if (drawings[selectedName]) {
+        if (deserializeDrawing(drawings[selectedName])) {
+          currentSaveName = selectedName;
+          updateSavedDrawingsList();
+        } else {
+          alert("Failed to load drawing.");
+        }
+      }
+    });
+
+    deleteSaveBtn.addEventListener("click", () => {
+      const selectedName = savedDrawingsSelect.value;
+      if (!selectedName) {
+        alert("Please select a drawing to delete.");
+        return;
+      }
+      
+      if (!confirm(`Delete "${selectedName}"?`)) {
+        return;
+      }
+      
+      const drawings = getSavedDrawings();
+      delete drawings[selectedName];
+      saveDrawings(drawings);
+      if (currentSaveName === selectedName) {
+        currentSaveName = null;
+      }
+      updateSavedDrawingsList();
+    });
+
+    // Initialize saved drawings list
+    updateSavedDrawingsList();
+
     let canvasWidthCSS = 0;
     let canvasHeightCSS = 0;
 
@@ -660,6 +881,9 @@
       const g = bgGray;
       const color = `rgb(${g}, ${g}, ${g})`;
       canvas.style.backgroundColor = color;
+      if (bgValue) {
+        bgValue.textContent = `${g}`;
+      }
     }
     updateBackground();
 
@@ -888,14 +1112,15 @@
           speedSlider.min = "0";
           speedSlider.max = "1000";
           speedSlider.step = "20";
-          speedSlider.value = path.speed || 400;
+          speedSlider.value = path.speed != null ? path.speed : 400;
           speedSlider.title = "Ball speed for this path";
           speedContainer.appendChild(speedSlider);
 
           const speedValue = document.createElement("div");
           speedValue.className = "path-speed-value";
           function updatePathSpeedDisplay() {
-            const displaySpeed = (path.speed || 400) / 20;
+            const speed = path.speed != null ? path.speed : 400;
+            const displaySpeed = speed / 20;
             speedValue.textContent = `${Math.round(displaySpeed)}`;
           }
           updatePathSpeedDisplay();
@@ -903,7 +1128,8 @@
 
           speedSlider.addEventListener("input", (e) => {
             e.stopPropagation();
-            path.speed = parseFloat(speedSlider.value) || 0;
+            const newSpeed = parseFloat(speedSlider.value);
+            path.speed = isNaN(newSpeed) ? 0 : newSpeed;
             updatePathSpeedDisplay();
           });
 
@@ -1034,6 +1260,22 @@
             renderPathList();
           });
           effectsButtons.appendChild(lightningBtn);
+
+          // Rain effect button
+          const rainBtn = document.createElement("button");
+          rainBtn.className = "path-effect-btn" + (path.effect === "rain" ? " active" : "");
+          rainBtn.textContent = "Rain";
+          rainBtn.title = path.effect === "rain" ? "Disable rain effect" : "Enable rain effect";
+          rainBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (path.effect === "rain") {
+              path.effect = null;
+            } else {
+              path.effect = "rain";
+            }
+            renderPathList();
+          });
+          effectsButtons.appendChild(rainBtn);
 
           effectsSection.appendChild(effectsButtons);
           main.appendChild(effectsSection);
@@ -1463,6 +1705,20 @@
           color: color || "#ffffff",
           opacity: 1.0
         });
+      } else if (type === "rain") {
+        // Create a rain drop that falls from top to bottom
+        const fallSpeed = 200 + Math.random() * 100; // 200-300 pixels per second
+        effects.push({
+          type: "rain",
+          x: x,
+          y: y,
+          age: 0,
+          maxAge: 10000, // Long enough to reach bottom (will be removed when hitting bottom)
+          vy: fallSpeed, // Vertical velocity (downward)
+          color: color || "#40e0ff",
+          opacity: 0.7,
+          length: 8 + Math.random() * 4 // 8-12px drop length
+        });
       }
       // Add more effect types here in the future
     }
@@ -1510,6 +1766,45 @@
         // Lightning fades quickly
         const progress = effect.age / effect.maxAge;
         effect.opacity = 1.0 * (1 - progress); // Fade out over time
+      } else if (effect.type === "rain") {
+        // Rain drops fall downward
+        const dtSeconds = dt;
+        effect.y += effect.vy * dtSeconds;
+        
+        // Check if rain drop hit the bottom of the canvas
+        if (effect.y >= canvasHeightCSS) {
+          // Create splash effect
+          const splashX = effect.x;
+          const splashY = canvasHeightCSS;
+          
+          // Create multiple splash particles
+          for (let i = 0; i < 5; i++) {
+            const angle = (Math.PI * i) / 5 + (Math.random() - 0.5) * 0.3; // Spread outward
+            const speed = 30 + Math.random() * 40; // 30-70 pixels per second
+            effects.push({
+              type: "splash",
+              x: splashX,
+              y: splashY,
+              age: 0,
+              maxAge: 400, // 0.4 second lifespan
+              vx: Math.cos(angle) * speed,
+              vy: -Math.abs(Math.sin(angle) * speed), // Upward and outward
+              color: effect.color,
+              opacity: 0.8,
+              size: 2 + Math.random() * 2 // 2-4px
+            });
+          }
+          
+          // Mark rain drop for removal
+          effect.age = effect.maxAge; // Will be removed in next update cycle
+        }
+      } else if (effect.type === "splash") {
+        // Splash particles move and fade
+        const dtSeconds = dt;
+        effect.x += effect.vx * dtSeconds;
+        effect.y += effect.vy * dtSeconds;
+        const progress = effect.age / effect.maxAge;
+        effect.opacity = 0.8 * (1 - progress); // Fade out over time
       }
       // Add more effect update logic here in the future
     }
@@ -1521,7 +1816,7 @@
 
       for (const path of paths) {
         if (!path.pointsPx || path.pointsPx.length < 2 || path.totalLength === 0) continue;
-        const speed = path.speed || 400; // default to 400 if not set
+        const speed = path.speed != null ? path.speed : 400; // default to 400 if not set, but allow 0
         const deltaDist = speed * dt;
         
         // Update ball positions
@@ -1546,6 +1841,8 @@
               baseInterval = 600; // Waves emit less frequently
             } else if (path.effect === "lightning") {
               baseInterval = 800; // Lightning emits less frequently (more dramatic)
+            } else if (path.effect === "rain") {
+              baseInterval = 150; // Rain emits very frequently for continuous effect
             }
             
             // If this ball hasn't emitted yet, give it a random initial delay
@@ -1722,6 +2019,33 @@
           ctx.stroke();
         }
         
+        ctx.restore();
+      } else if (effect.type === "rain") {
+        // Draw rain drop as a diagonal line
+        ctx.save();
+        ctx.strokeStyle = effect.color;
+        ctx.globalAlpha = effect.opacity;
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        // Rain drop is angled slightly (about 15 degrees from vertical)
+        const angle = Math.PI / 2 + 0.15; // Slightly angled
+        const dropLength = effect.length || 10;
+        ctx.moveTo(effect.x, effect.y);
+        ctx.lineTo(
+          effect.x + Math.cos(angle) * dropLength,
+          effect.y + Math.sin(angle) * dropLength
+        );
+        ctx.stroke();
+        ctx.restore();
+      } else if (effect.type === "splash") {
+        // Draw splash particles as small circles
+        ctx.save();
+        ctx.fillStyle = effect.color;
+        ctx.globalAlpha = effect.opacity;
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, effect.size || 2, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
       }
       // Add more effect rendering here in the future
