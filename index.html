@@ -197,6 +197,78 @@
       align-items: flex-start;
     }
 
+    .path-speed-slider-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      flex-shrink: 0;
+      padding-left: 0.5rem;
+      border-left: 1px solid #333;
+    }
+
+    .path-speed-slider-label {
+      font-size: 0.65rem;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .path-speed-slider {
+      width: 60px;
+      height: 100px;
+      -webkit-appearance: slider-vertical;
+      appearance: slider-vertical;
+      writing-mode: bt-lr; /* IE */
+      direction: rtl;
+    }
+
+    .path-speed-value {
+      font-size: 0.7rem;
+      color: #ccc;
+      min-height: 1.2em;
+    }
+
+    .path-effects-section {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid #333;
+    }
+
+    .path-effects-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #aaa;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .path-effects-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .path-effect-btn {
+      border: none;
+      background: transparent;
+      color: #ccc;
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 0.1rem 0.35rem;
+      text-align: left;
+    }
+
+    .path-effect-btn:hover {
+      color: #a0ffa0;
+    }
+
+    .path-effect-btn.active {
+      color: #4caf50;
+      font-weight: 600;
+    }
+
     .path-action-column {
       display: flex;
       flex-direction: column;
@@ -379,13 +451,7 @@
       font-size: 0.85rem;
     }
 
-    #speedContainer {
-      margin-top: 0.4rem;
-      font-size: 0.85rem;
-    }
-
-    #ballSizeContainer label,
-    #speedContainer label {
+    #ballSizeContainer label {
       display: grid;
       grid-template-columns: 70px minmax(0, 1fr) 40px;
       column-gap: 0.3rem;
@@ -396,8 +462,7 @@
       white-space: nowrap;
     }
 
-    #ballSizeSlider,
-    #speedSlider {
+    #ballSizeSlider {
       width: 100%;
       min-width: 0;
       max-width: 100%;
@@ -405,12 +470,6 @@
 
     #ballSizeValue {
       min-width: 32px;
-      text-align: right;
-      opacity: 0.8;
-    }
-
-    #speedValue {
-      min-width: 40px;
       text-align: right;
       opacity: 0.8;
     }
@@ -470,19 +529,6 @@
           <span id="ballSizeValue">10</span>
         </label>
       </div>
-      <div id="speedContainer">
-        <label>
-          <span class="slider-label">Speed:</span>
-          <input
-            type="range"
-            id="speedSlider"
-            min="0"
-            max="1000"
-            step="20"
-            value="400" />
-          <span id="speedValue">20</span>
-        </label>
-      </div>
     </div>
   </div>
 
@@ -493,8 +539,6 @@
     const launchBtn = document.getElementById("launchBtn");
     const editPathBtn = document.getElementById("editPathBtn");
     const editBallsBtn = document.getElementById("editBallsBtn");
-    const speedSlider = document.getElementById("speedSlider");
-    const speedValue = document.getElementById("speedValue");
     const bgSlider = document.getElementById("bgSlider");
     const ballSizeSlider = document.getElementById("ballSizeSlider");
     const ballSizeValue = document.getElementById("ballSizeValue");
@@ -601,17 +645,15 @@
     let nextPathId = 1;
     let selectedPathId = null;
 
+    // ----- EFFECTS -----
+    const effects = []; // Array of active effects: [{ type, x, y, age, maxAge, ... }]
+    // Track last emission time per ball to control emission frequency
+    const ballLastEmission = new Map(); // pathId-ballIndex -> lastEmissionTime
+
     let canvasWidthCSS = 0;
     let canvasHeightCSS = 0;
 
     // Speed in pixels per second (all paths/balls share this)
-    let speedPixelsPerSecond = parseFloat(speedSlider.value);
-    function updateSpeedDisplay() {
-      const displaySpeed = speedPixelsPerSecond / 20;
-      speedValue.textContent = `${Math.round(displaySpeed)}`;
-    }
-    updateSpeedDisplay();
-
     // Background grayscale value: 0 = black, 255 = white
     let bgGray = parseInt(bgSlider.value, 10) || 50;
     function updateBackground() {
@@ -650,7 +692,10 @@
         pointsPx: [],      // [{ x, y }]
         segments: [],      // [{ length, start, x1,y1,x2,y2 }]
         totalLength: 0,
-        visible: true
+        visible: true,
+        ballsVisible: true,
+        speed: 400,        // pixels per second (default 400)
+        effect: null      // 'ripples' | null (or other effect types in future)
       };
       paths.push(path);
       if (selectAfter) {
@@ -673,6 +718,11 @@
 
       if (selectedBalls.length > 0) {
         selectedBalls = selectedBalls.filter(sel => sel.path !== path);
+      }
+
+      // Clean up ball emission tracking for this path
+      for (let i = 0; i < path.balls.length; i++) {
+        ballLastEmission.delete(`${path.id}-${i}`);
       }
 
       paths.splice(idx, 1);
@@ -790,6 +840,20 @@
           const ballsActions = document.createElement("div");
           ballsActions.className = "path-actions";
 
+          // Hide/Show balls button
+          const ballsVisibilityBtn = document.createElement("button");
+          ballsVisibilityBtn.className = "toggle-visibility-btn";
+          const ballsAreVisible = path.ballsVisible !== false;
+          ballsVisibilityBtn.textContent = ballsAreVisible ? "Hide" : "Show";
+          ballsVisibilityBtn.title = ballsAreVisible ? "Hide balls on this path" : "Show balls on this path";
+          ballsVisibilityBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const currentlyVisible = path.ballsVisible !== false;
+            path.ballsVisible = !currentlyVisible;
+            renderPathList();
+          });
+          ballsActions.appendChild(ballsVisibilityBtn);
+
           // Spread button (always visible, but no-ops if conditions not met)
           const spreadBtn = document.createElement("button");
           spreadBtn.className = "spread-balls-btn";
@@ -809,7 +873,170 @@
           ballsColumn.appendChild(ballsActions);
           actionsContainer.appendChild(ballsColumn);
 
+          // Speed slider (vertical, to the right of Balls column)
+          const speedContainer = document.createElement("div");
+          speedContainer.className = "path-speed-slider-container";
+
+          const speedLabel = document.createElement("div");
+          speedLabel.className = "path-speed-slider-label";
+          speedLabel.textContent = "Speed";
+          speedContainer.appendChild(speedLabel);
+
+          const speedSlider = document.createElement("input");
+          speedSlider.type = "range";
+          speedSlider.className = "path-speed-slider";
+          speedSlider.min = "0";
+          speedSlider.max = "1000";
+          speedSlider.step = "20";
+          speedSlider.value = path.speed || 400;
+          speedSlider.title = "Ball speed for this path";
+          speedContainer.appendChild(speedSlider);
+
+          const speedValue = document.createElement("div");
+          speedValue.className = "path-speed-value";
+          function updatePathSpeedDisplay() {
+            const displaySpeed = (path.speed || 400) / 20;
+            speedValue.textContent = `${Math.round(displaySpeed)}`;
+          }
+          updatePathSpeedDisplay();
+          speedContainer.appendChild(speedValue);
+
+          speedSlider.addEventListener("input", (e) => {
+            e.stopPropagation();
+            path.speed = parseFloat(speedSlider.value) || 0;
+            updatePathSpeedDisplay();
+          });
+
+          actionsContainer.appendChild(speedContainer);
+
           main.appendChild(actionsContainer);
+
+          // Effects section
+          const effectsSection = document.createElement("div");
+          effectsSection.className = "path-effects-section";
+
+          const effectsTitle = document.createElement("div");
+          effectsTitle.className = "path-effects-title";
+          effectsTitle.textContent = "Effects";
+          effectsSection.appendChild(effectsTitle);
+
+          const effectsButtons = document.createElement("div");
+          effectsButtons.className = "path-effects-buttons";
+
+          // Ripples effect button
+          const ripplesBtn = document.createElement("button");
+          ripplesBtn.className = "path-effect-btn" + (path.effect === "ripples" ? " active" : "");
+          ripplesBtn.textContent = "Ripples";
+          ripplesBtn.title = path.effect === "ripples" ? "Disable ripples effect" : "Enable ripples effect";
+          ripplesBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (path.effect === "ripples") {
+              path.effect = null;
+            } else {
+              path.effect = "ripples";
+            }
+            renderPathList();
+          });
+          effectsButtons.appendChild(ripplesBtn);
+
+          // Sparks effect button
+          const sparksBtn = document.createElement("button");
+          sparksBtn.className = "path-effect-btn" + (path.effect === "sparks" ? " active" : "");
+          sparksBtn.textContent = "Sparks";
+          sparksBtn.title = path.effect === "sparks" ? "Disable sparks effect" : "Enable sparks effect";
+          sparksBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (path.effect === "sparks") {
+              path.effect = null;
+            } else {
+              path.effect = "sparks";
+            }
+            renderPathList();
+          });
+          effectsButtons.appendChild(sparksBtn);
+
+          // Smoke effect button
+          const smokeBtn = document.createElement("button");
+          smokeBtn.className = "path-effect-btn" + (path.effect === "smoke" ? " active" : "");
+          smokeBtn.textContent = "Smoke";
+          smokeBtn.title = path.effect === "smoke" ? "Disable smoke effect" : "Enable smoke effect";
+          smokeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (path.effect === "smoke") {
+              path.effect = null;
+            } else {
+              path.effect = "smoke";
+            }
+            renderPathList();
+          });
+          effectsButtons.appendChild(smokeBtn);
+
+          // Bubbles effect button
+          const bubblesBtn = document.createElement("button");
+          bubblesBtn.className = "path-effect-btn" + (path.effect === "bubbles" ? " active" : "");
+          bubblesBtn.textContent = "Bubbles";
+          bubblesBtn.title = path.effect === "bubbles" ? "Disable bubbles effect" : "Enable bubbles effect";
+          bubblesBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (path.effect === "bubbles") {
+              path.effect = null;
+            } else {
+              path.effect = "bubbles";
+            }
+            renderPathList();
+          });
+          effectsButtons.appendChild(bubblesBtn);
+
+          // Streaks effect button
+          const streaksBtn = document.createElement("button");
+          streaksBtn.className = "path-effect-btn" + (path.effect === "streaks" ? " active" : "");
+          streaksBtn.textContent = "Streaks";
+          streaksBtn.title = path.effect === "streaks" ? "Disable streaks effect" : "Enable streaks effect";
+          streaksBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (path.effect === "streaks") {
+              path.effect = null;
+            } else {
+              path.effect = "streaks";
+            }
+            renderPathList();
+          });
+          effectsButtons.appendChild(streaksBtn);
+
+          // Waves effect button
+          const wavesBtn = document.createElement("button");
+          wavesBtn.className = "path-effect-btn" + (path.effect === "waves" ? " active" : "");
+          wavesBtn.textContent = "Waves";
+          wavesBtn.title = path.effect === "waves" ? "Disable waves effect" : "Enable waves effect";
+          wavesBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (path.effect === "waves") {
+              path.effect = null;
+            } else {
+              path.effect = "waves";
+            }
+            renderPathList();
+          });
+          effectsButtons.appendChild(wavesBtn);
+
+          // Lightning effect button
+          const lightningBtn = document.createElement("button");
+          lightningBtn.className = "path-effect-btn" + (path.effect === "lightning" ? " active" : "");
+          lightningBtn.textContent = "Lightning";
+          lightningBtn.title = path.effect === "lightning" ? "Disable lightning effect" : "Enable lightning effect";
+          lightningBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (path.effect === "lightning") {
+              path.effect = null;
+            } else {
+              path.effect = "lightning";
+            }
+            renderPathList();
+          });
+          effectsButtons.appendChild(lightningBtn);
+
+          effectsSection.appendChild(effectsButtons);
+          main.appendChild(effectsSection);
         }
 
         item.appendChild(main);
@@ -1076,16 +1303,428 @@
       renderPathList();
     }
 
+    function emitEffect(type, x, y, color, direction = null) {
+      if (type === "ripples") {
+        effects.push({
+          type: "ripples",
+          x: x,
+          y: y,
+          age: 0,
+          maxAge: 1000, // 1 second lifespan
+          radius: 0,
+          color: color || "#40e0ff",
+          opacity: 0.6
+        });
+      } else if (type === "sparks") {
+        // Create multiple sparks shooting in all directions
+        const numSparks = 10;
+        const baseSpeed = 150; // pixels per second
+        for (let i = 0; i < numSparks; i++) {
+          const angle = (Math.PI * 2 * i) / numSparks + (Math.random() - 0.5) * 0.3; // Slight randomness
+          const speed = baseSpeed + (Math.random() - 0.5) * 50; // Random speed variation
+          effects.push({
+            type: "sparks",
+            x: x,
+            y: y,
+            age: 0,
+            maxAge: 600, // 0.6 second lifespan
+            vx: Math.cos(angle) * speed, // velocity in x direction
+            vy: Math.sin(angle) * speed, // velocity in y direction
+            color: color || "#40e0ff",
+            opacity: 1.0,
+            size: 2 + Math.random() * 2 // Random size 2-4px
+          });
+        }
+      } else if (type === "smoke") {
+        // Create wispy smoke particles that drift upward
+        const numParticles = 3;
+        for (let i = 0; i < numParticles; i++) {
+          effects.push({
+            type: "smoke",
+            x: x + (Math.random() - 0.5) * 8, // Slight horizontal spread
+            y: y,
+            age: 0,
+            maxAge: 2000, // 2 second lifespan
+            vx: (Math.random() - 0.5) * 20, // Slight horizontal drift
+            vy: -30 - Math.random() * 20, // Upward drift, variable speed
+            color: color || "#888888",
+            opacity: 0.4 + Math.random() * 0.3, // 0.4-0.7
+            size: 3 + Math.random() * 4 // Random size 3-7px
+          });
+        }
+      } else if (type === "bubbles") {
+        // Create bubbles that rise and pop
+        const numBubbles = 1 + Math.floor(Math.random() * 2); // 1-2 bubbles
+        for (let i = 0; i < numBubbles; i++) {
+          const baseRadius = 4 + Math.random() * 6; // 4-10px radius
+          effects.push({
+            type: "bubbles",
+            x: x + (Math.random() - 0.5) * 10, // Slight horizontal offset
+            y: y,
+            age: 0,
+            maxAge: 1500 + Math.random() * 500, // 1.5-2 second lifespan
+            vx: (Math.random() - 0.5) * 15, // Slight horizontal drift
+            vy: -40 - Math.random() * 20, // Upward movement
+            radius: baseRadius,
+            maxRadius: baseRadius * 1.3, // Bubbles grow slightly before popping
+            color: color || "#40e0ff",
+            opacity: 0.3 + Math.random() * 0.2 // 0.3-0.5
+          });
+        }
+      } else if (type === "streaks") {
+        // Create a streak in the direction of travel
+        if (direction) {
+          const streakLength = 15 + Math.random() * 10; // 15-25px length
+          effects.push({
+            type: "streaks",
+            x: x,
+            y: y,
+            age: 0,
+            maxAge: 300, // 0.3 second lifespan (quick fade)
+            endX: x - direction.x * streakLength, // Streak goes backward from direction
+            endY: y - direction.y * streakLength,
+            color: color || "#40e0ff",
+            opacity: 0.8,
+            width: 1.5 + Math.random() * 1 // 1.5-2.5px width
+          });
+        }
+      } else if (type === "waves") {
+        // Create expanding circular wave with sine pattern
+        effects.push({
+          type: "waves",
+          x: x,
+          y: y,
+          age: 0,
+          maxAge: 1200, // 1.2 second lifespan
+          radius: 0,
+          color: color || "#40e0ff",
+          opacity: 0.7,
+          frequency: 3 + Math.random() * 2, // 3-5 waves
+          phase: Math.random() * Math.PI * 2 // Random starting phase
+        });
+      } else if (type === "lightning") {
+        // Create branching electrical lightning bolt
+        const boltLength = 60 + Math.random() * 40; // 60-100px length
+        const angle = Math.random() * Math.PI * 2; // Random angle in all directions (0 to 2π)
+        const numSegments = 8 + Math.floor(Math.random() * 5); // 8-12 segments
+        const branches = [];
+        
+        // Create main bolt path
+        const segments = [];
+        let currentX = x;
+        let currentY = y;
+        const segmentLength = boltLength / numSegments;
+        let currentAngle = angle;
+        
+        for (let i = 0; i < numSegments; i++) {
+          // Jagged path with angle variation
+          currentAngle = currentAngle + (Math.random() - 0.5) * 0.4;
+          const nextX = currentX + Math.cos(currentAngle) * segmentLength;
+          const nextY = currentY + Math.sin(currentAngle) * segmentLength;
+          
+          segments.push({ x: currentX, y: currentY });
+          currentX = nextX;
+          currentY = nextY;
+          
+          // Create branches more frequently (50% chance, and allow more segments)
+          if (Math.random() > 0.5 && i > 1 && i < numSegments - 1) {
+            const branchLength = 15 + Math.random() * 20; // 15-35px branches
+            const branchAngle = currentAngle + (Math.random() - 0.5) * 1.2; // More variation
+            branches.push({
+              startX: currentX,
+              startY: currentY,
+              endX: currentX + Math.cos(branchAngle) * branchLength,
+              endY: currentY + Math.sin(branchAngle) * branchLength
+            });
+            
+            // Sometimes create a second branch from the same point
+            if (Math.random() > 0.6) {
+              const branch2Length = 10 + Math.random() * 15;
+              const branch2Angle = currentAngle + (Math.random() - 0.5) * 1.2;
+              branches.push({
+                startX: currentX,
+                startY: currentY,
+                endX: currentX + Math.cos(branch2Angle) * branch2Length,
+                endY: currentY + Math.sin(branch2Angle) * branch2Length
+              });
+            }
+          }
+        }
+        segments.push({ x: currentX, y: currentY }); // End point
+        
+        effects.push({
+          type: "lightning",
+          x: x,
+          y: y,
+          age: 0,
+          maxAge: 200, // 0.2 second lifespan (very quick flash)
+          segments: segments,
+          branches: branches,
+          color: color || "#ffffff",
+          opacity: 1.0
+        });
+      }
+      // Add more effect types here in the future
+    }
+
+    function updateEffect(effect, dt) {
+      if (effect.type === "ripples") {
+        // Ripples expand outward
+        const progress = effect.age / effect.maxAge;
+        effect.radius = progress * 80; // Max radius of 80px
+        effect.opacity = 0.6 * (1 - progress); // Fade out over time
+      } else if (effect.type === "sparks") {
+        // Sparks move outward and fade
+        const dtSeconds = dt; // dt is already in seconds
+        effect.x += effect.vx * dtSeconds;
+        effect.y += effect.vy * dtSeconds;
+        const progress = effect.age / effect.maxAge;
+        effect.opacity = 1.0 * (1 - progress); // Fade out over time
+      } else if (effect.type === "smoke") {
+        // Smoke drifts upward and expands/fades
+        const dtSeconds = dt;
+        effect.x += effect.vx * dtSeconds;
+        effect.y += effect.vy * dtSeconds;
+        const progress = effect.age / effect.maxAge;
+        effect.size += dtSeconds * 5; // Smoke particles expand over time
+        effect.opacity = effect.opacity * (1 - progress * 0.5); // Fade out gradually
+      } else if (effect.type === "bubbles") {
+        // Bubbles rise, grow slightly, and fade
+        const dtSeconds = dt;
+        effect.x += effect.vx * dtSeconds;
+        effect.y += effect.vy * dtSeconds;
+        const progress = effect.age / effect.maxAge;
+        // Bubbles grow slightly as they rise
+        effect.radius = effect.radius + (effect.maxRadius - effect.radius) * progress * 0.3;
+        effect.opacity = effect.opacity * (1 - progress); // Fade out over time
+      } else if (effect.type === "streaks") {
+        // Streaks fade quickly
+        const progress = effect.age / effect.maxAge;
+        effect.opacity = 0.8 * (1 - progress); // Fade out over time
+      } else if (effect.type === "waves") {
+        // Waves expand outward
+        const progress = effect.age / effect.maxAge;
+        effect.radius = progress * 100; // Max radius of 100px
+        effect.opacity = 0.7 * (1 - progress); // Fade out over time
+      } else if (effect.type === "lightning") {
+        // Lightning fades quickly
+        const progress = effect.age / effect.maxAge;
+        effect.opacity = 1.0 * (1 - progress); // Fade out over time
+      }
+      // Add more effect update logic here in the future
+    }
+
     function update(dt) {
       if (editPathMode || editBallMode) return;
 
+      const now = performance.now();
+
       for (const path of paths) {
         if (!path.pointsPx || path.pointsPx.length < 2 || path.totalLength === 0) continue;
-        const deltaDist = speedPixelsPerSecond * dt;
-        for (const ball of path.balls) {
+        const speed = path.speed || 400; // default to 400 if not set
+        const deltaDist = speed * dt;
+        
+        // Update ball positions
+        for (let i = 0; i < path.balls.length; i++) {
+          const ball = path.balls[i];
           ball.dist = (ball.dist + deltaDist) % path.totalLength;
+
+          // Emit effects if enabled (even when balls are hidden)
+          if (path.effect) {
+            const ballKey = `${path.id}-${i}`;
+            let lastEmission = ballLastEmission.get(ballKey);
+            
+            // Determine base interval based on effect type
+            let baseInterval = 500; // Default for ripples/sparks
+            if (path.effect === "smoke") {
+              baseInterval = 300; // Smoke emits more frequently
+            } else if (path.effect === "bubbles") {
+              baseInterval = 400; // Bubbles emit moderately frequently
+            } else if (path.effect === "streaks") {
+              baseInterval = 200; // Streaks emit very frequently for smooth trails
+            } else if (path.effect === "waves") {
+              baseInterval = 600; // Waves emit less frequently
+            } else if (path.effect === "lightning") {
+              baseInterval = 800; // Lightning emits less frequently (more dramatic)
+            }
+            
+            // If this ball hasn't emitted yet, give it a random initial delay
+            if (lastEmission === undefined) {
+              lastEmission = now - Math.random() * baseInterval; // Random offset based on interval
+              ballLastEmission.set(ballKey, lastEmission);
+            }
+            const randomVariation = (Math.random() - 0.5) * (baseInterval * 0.4); // ±20% variation
+            const emissionInterval = baseInterval + randomVariation;
+
+            if (now - lastEmission >= emissionInterval) {
+              const pos = getPointAlongPathDistance(path, ball.dist);
+              if (pos) {
+                // Calculate direction for streaks (get position slightly ahead)
+                let direction = null;
+                if (path.effect === "streaks") {
+                  const aheadDist = (ball.dist + 5) % path.totalLength;
+                  const aheadPos = getPointAlongPathDistance(path, aheadDist);
+                  if (aheadPos) {
+                    const dx = aheadPos.x - pos.x;
+                    const dy = aheadPos.y - pos.y;
+                    const len = Math.hypot(dx, dy);
+                    if (len > 0) {
+                      direction = { x: dx / len, y: dy / len };
+                    }
+                  }
+                }
+                emitEffect(path.effect, pos.x, pos.y, ball.color, direction);
+                ballLastEmission.set(ballKey, now);
+              }
+            }
+          }
         }
       }
+
+      // Update and age effects
+      for (let i = effects.length - 1; i >= 0; i--) {
+        const effect = effects[i];
+        effect.age += dt * 1000; // age in milliseconds
+
+        if (effect.age >= effect.maxAge) {
+          effects.splice(i, 1);
+        } else {
+          updateEffect(effect, dt);
+        }
+      }
+    }
+
+    function drawEffect(effect) {
+      if (effect.type === "ripples") {
+        ctx.save();
+        ctx.strokeStyle = effect.color;
+        ctx.globalAlpha = effect.opacity;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      } else if (effect.type === "sparks") {
+        ctx.save();
+        ctx.fillStyle = effect.color;
+        ctx.globalAlpha = effect.opacity;
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, effect.size || 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (effect.type === "smoke") {
+        // Draw smoke as soft, wispy particles
+        ctx.save();
+        ctx.fillStyle = effect.color;
+        ctx.globalAlpha = effect.opacity;
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, effect.size || 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (effect.type === "bubbles") {
+        // Draw bubbles as circles with a highlight
+        ctx.save();
+        ctx.strokeStyle = effect.color;
+        ctx.fillStyle = effect.color;
+        ctx.globalAlpha = effect.opacity;
+        ctx.lineWidth = 1.5;
+        
+        // Draw bubble outline
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Draw highlight (smaller circle at top-left)
+        ctx.globalAlpha = effect.opacity * 0.6;
+        ctx.beginPath();
+        ctx.arc(effect.x - effect.radius * 0.3, effect.y - effect.radius * 0.3, effect.radius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+      } else if (effect.type === "streaks") {
+        // Draw streak as a line in the direction of travel
+        ctx.save();
+        ctx.strokeStyle = effect.color;
+        ctx.globalAlpha = effect.opacity;
+        ctx.lineWidth = effect.width || 2;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(effect.x, effect.y);
+        ctx.lineTo(effect.endX, effect.endY);
+        ctx.stroke();
+        ctx.restore();
+      } else if (effect.type === "waves") {
+        // Draw expanding circular wave with sine wave pattern
+        ctx.save();
+        ctx.strokeStyle = effect.color;
+        ctx.globalAlpha = effect.opacity;
+        ctx.lineWidth = 2;
+        
+        const numPoints = 64; // Number of points to draw the wave
+        ctx.beginPath();
+        for (let i = 0; i <= numPoints; i++) {
+          const angle = (i / numPoints) * Math.PI * 2;
+          const baseRadius = effect.radius;
+          // Add sine wave variation based on angle and frequency
+          const waveOffset = Math.sin(angle * effect.frequency + effect.phase) * 8;
+          const radius = baseRadius + waveOffset;
+          const x = effect.x + Math.cos(angle) * radius;
+          const y = effect.y + Math.sin(angle) * radius;
+          
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.stroke();
+        ctx.restore();
+      } else if (effect.type === "lightning") {
+        // Draw branching lightning bolt with jagged lines
+        ctx.save();
+        ctx.strokeStyle = effect.color;
+        ctx.globalAlpha = effect.opacity;
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        
+        // Draw main bolt
+        if (effect.segments && effect.segments.length > 0) {
+          ctx.beginPath();
+          ctx.moveTo(effect.segments[0].x, effect.segments[0].y);
+          for (let i = 1; i < effect.segments.length; i++) {
+            ctx.lineTo(effect.segments[i].x, effect.segments[i].y);
+          }
+          ctx.stroke();
+        }
+        
+        // Draw branches
+        if (effect.branches && effect.branches.length > 0) {
+          ctx.lineWidth = 1.5;
+          for (const branch of effect.branches) {
+            ctx.beginPath();
+            ctx.moveTo(branch.startX, branch.startY);
+            ctx.lineTo(branch.endX, branch.endY);
+            ctx.stroke();
+          }
+        }
+        
+        // Draw bright core for extra intensity
+        ctx.globalAlpha = effect.opacity * 0.5;
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1;
+        if (effect.segments && effect.segments.length > 0) {
+          ctx.beginPath();
+          ctx.moveTo(effect.segments[0].x, effect.segments[0].y);
+          for (let i = 1; i < effect.segments.length; i++) {
+            ctx.lineTo(effect.segments[i].x, effect.segments[i].y);
+          }
+          ctx.stroke();
+        }
+        
+        ctx.restore();
+      }
+      // Add more effect rendering here in the future
     }
 
     function draw() {
@@ -1145,10 +1784,12 @@
         }
       }
 
-      // Draw balls (hidden only in path edit mode)
+      // Draw balls (hidden only in path edit mode or if balls are hidden, but always show in Edit Balls mode)
       if (!editPathMode) {
         for (const path of paths) {
           if (!path.balls || path.balls.length === 0) continue;
+          // Show balls in Edit Balls mode even if they're normally hidden
+          if (path.ballsVisible === false && !editBallMode) continue;
           for (let i = 0; i < path.balls.length; i++) {
             const ball = path.balls[i];
             const pos = getPointAlongPathDistance(path, ball.dist);
@@ -1173,6 +1814,13 @@
               ctx.stroke();
             }
           }
+        }
+      }
+
+      // Draw effects (hidden in edit modes)
+      if (!editPathMode && !editBallMode) {
+        for (const effect of effects) {
+          drawEffect(effect);
         }
       }
 
@@ -1321,11 +1969,6 @@
     canvas.addEventListener("pointerleave", onPointerUpOrCancel);
 
     // Control wiring
-    speedSlider.addEventListener("input", () => {
-      speedPixelsPerSecond = parseFloat(speedSlider.value) || 0;
-      updateSpeedDisplay();
-    });
-
     bgSlider.addEventListener("input", () => {
       bgGray = parseInt(bgSlider.value, 10) || 0;
       updateBackground();
