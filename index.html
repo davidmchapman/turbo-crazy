@@ -1277,6 +1277,22 @@
           });
           effectsButtons.appendChild(rainBtn);
 
+          // Curve effect button
+          const curveBtn = document.createElement("button");
+          curveBtn.className = "path-effect-btn" + (path.effect === "curve" ? " active" : "");
+          curveBtn.textContent = "Curve";
+          curveBtn.title = path.effect === "curve" ? "Disable curve effect" : "Enable curve effect";
+          curveBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (path.effect === "curve") {
+              path.effect = null;
+            } else {
+              path.effect = "curve";
+            }
+            renderPathList();
+          });
+          effectsButtons.appendChild(curveBtn);
+
           effectsSection.appendChild(effectsButtons);
           main.appendChild(effectsSection);
         }
@@ -2136,6 +2152,75 @@
               ctx.beginPath();
               ctx.arc(pos.x, pos.y, rBall + 3, 0, Math.PI * 2);
               ctx.stroke();
+            }
+          }
+        }
+        
+        // Draw curve effect through balls (hidden in edit modes, always visible otherwise even when balls are hidden)
+        if (!editBallMode) {
+          for (const path of paths) {
+            if (path.effect === "curve" && path.balls && path.balls.length >= 2 && path.totalLength > 0) {
+              // Collect all ball positions with their distances
+              const allBalls = [];
+              for (const ball of path.balls) {
+                const pos = getPointAlongPathDistance(path, ball.dist);
+                if (pos) {
+                  // Get unwrapped distance for sorting
+                  const unwrappedDist = ball.dist % path.totalLength;
+                  allBalls.push({ dist: unwrappedDist, pos: pos });
+                }
+              }
+              
+              // Sort by distance along path
+              allBalls.sort((a, b) => a.dist - b.dist);
+              
+              if (allBalls.length >= 2) {
+                // Check if first and last balls are close (within 80px)
+                const firstPos = allBalls[0].pos;
+                const lastPos = allBalls[allBalls.length - 1].pos;
+                const distBetween = Math.hypot(lastPos.x - firstPos.x, lastPos.y - firstPos.y);
+                const shouldConnect = distBetween < 80;
+                
+                let ballPositions = allBalls.map(b => b.pos);
+                
+                // If first and last are close, add first ball again at the end to create loop
+                if (shouldConnect && allBalls.length >= 2) {
+                  ballPositions.push(firstPos);
+                }
+                // Draw smooth curve through ball positions using Catmull-Rom spline
+                ctx.save();
+                ctx.strokeStyle = path.balls.length > 0 ? path.balls[0].color : "#40e0ff";
+                ctx.globalAlpha = 0.6;
+                ctx.lineWidth = 2;
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                
+                ctx.beginPath();
+                
+                // Start at first ball
+                ctx.moveTo(ballPositions[0].x, ballPositions[0].y);
+                
+                // Draw smooth curve using cubic bezier curves
+                for (let i = 0; i < ballPositions.length - 1; i++) {
+                  const p0 = i > 0 ? ballPositions[i - 1] : ballPositions[i];
+                  const p1 = ballPositions[i];
+                  const p2 = ballPositions[i + 1];
+                  const p3 = i < ballPositions.length - 2 ? ballPositions[i + 2] : ballPositions[i + 1];
+                  
+                  // Calculate control points for smooth curve
+                  // Use Catmull-Rom style control points
+                  const tension = 0.5;
+                  const cp1x = p1.x + (p2.x - p0.x) * tension * 0.5;
+                  const cp1y = p1.y + (p2.y - p0.y) * tension * 0.5;
+                  const cp2x = p2.x - (p3.x - p1.x) * tension * 0.5;
+                  const cp2y = p2.y - (p3.y - p1.y) * tension * 0.5;
+                  
+                  ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+                }
+                
+                ctx.stroke();
+                ctx.restore();
+              }
             }
           }
         }
